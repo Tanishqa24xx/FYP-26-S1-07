@@ -11,7 +11,7 @@
 -- UUID: unique identifier used by Supabase Auth
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.profiles (
-    id               UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, 
+    id               BIGINT PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, 
     email            TEXT UNIQUE NOT NULL,
     display_name     TEXT,
     plan             TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'standard', 'premium')),
