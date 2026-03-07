@@ -6,17 +6,16 @@
 
 -- ============================================================
 -- PROFILES TABLE
--- Auto-created on Supabase Auth signup via trigger
 -- id: matches user in auth.users
 -- UUID: unique identifier used by Supabase Auth
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.profiles (
-    id               BIGINT PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, 
+    id               UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, 
     email            TEXT UNIQUE NOT NULL,
     display_name     TEXT,
     plan             TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'standard', 'premium')),
     scans_today      INTEGER NOT NULL DEFAULT 0,
-    daily_scan_limit INTEGER DEFAULT 5,
+    daily_scan_limit INTEGER NULL,
     last_scan_reset  DATE DEFAULT CURRENT_DATE,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -32,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.scan_results (
     id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    user_id           UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    user_id           UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     url               TEXT NOT NULL,
     scan_source       TEXT NOT NULL DEFAULT 'manual' CHECK (scan_source IN ('manual', 'camera', 'qr')),
     risk_level        TEXT NOT NULL CHECK (risk_level IN ('safe', 'suspicious', 'dangerous', 'unknown')),
@@ -76,7 +75,7 @@ CREATE TABLE IF NOT EXISTS public.camera_scan_logs (
 CREATE TABLE IF NOT EXISTS public.sandbox_analyses (
     id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     scan_id          BIGINT NOT NULL REFERENCES public.scan_results(id) ON DELETE CASCADE,
-    user_id          BIGINT REFERENCES public.profiles(id),
+    user_id          UUID REFERENCES public.profiles(id),
     url              TEXT NOT NULL,
     status_code      INTEGER,
     page_title       TEXT,
