@@ -5,6 +5,7 @@ from fastapi import FastAPI                           # FastAPI framework to bui
 from fastapi.middleware.cors import CORSMiddleware    # CORS (Cross Origin Resource Sharing) allows app to call this backend
 import uvicorn                                        # server runner
 
+from schemas import ScanRequest
 from database import get_profile, add_scan, get_scans
 
 # =====================================
@@ -54,8 +55,8 @@ async def profile(user_id: str):
 # Add Scan result
 # =====================================
 @app.post("/scan")
-async def scan(user_id: str, url: str):
-    result = add_scan(user_id, url)
+async def scan(scan: ScanRequest):
+    result = add_scan(scan.user_id, scan.url, scan.source.value)
     return {"message": "Scan saved", "data": result}
 
 # =====================================
