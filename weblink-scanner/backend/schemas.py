@@ -1,102 +1,138 @@
 # backend/schemas.py
+# Pydantic models for request/response payloads
 
 from pydantic import BaseModel
 from enum import Enum
 from typing import Optional, List
 from datetime import datetime
 
-# =====================================
-# Risk Levels
-# =====================================
+# ----------------------------------------
+# ENUMS
+# ----------------------------------------
+
 class RiskLevel(str, Enum):
     SAFE = "safe"
     SUSPICIOUS = "suspicious"
     DANGEROUS = "dangerous"
     UNKNOWN = "unknown"
 
-# =====================================
-# Scan Source Types
-# =====================================
 class ScanSource(str, Enum):
     MANUAL = "manual"
     CAMERA = "camera"
     QR = "qr"
 
-# =====================================
-# Request: URL Scan
-# =====================================
+class Plan(str, Enum):
+    FREE = "free"
+    STANDARD = "standard"
+    PREMIUM = "premium"
+
+# ----------------------------------------
+# SUBSCRIPTION PLAN
+# ----------------------------------------
+
+class PlanInfo(BaseModel):
+    name: str
+    price: str
+    scan_limit: str
+    features: List[str]
+
+class UserPlanResponse(BaseModel):
+    current_plan: str
+    scans_today: int
+    daily_limit: Optional[int]
+    plan_details: PlanInfo
+
+class UpgradePlanRequest(BaseModel):
+    new_plan: str
+
+class UpgradePlanResponse(BaseModel):
+    message: str
+    new_plan: str
+
+# ----------------------------------------
+# URL SCAN
+# ----------------------------------------
+
 class ScanRequest(BaseModel):
-    user_id: str
     url: str
-    source: ScanSource = ScanSource.MANUAL
 
-# =====================================
-# Virus Summary
-# =====================================
-class VirusTotalSummary(BaseModel):
-    malicious: int = 0
-    suspicious: int = 0
-    harmless: int = 0
-    undetected: int = 0
-    total_engines: int = 0
-
-# =====================================
-# Response: Scan Result
-# =====================================
 class ScanResponse(BaseModel):
     scan_id: str
-    url: str
-    risk_level: RiskLevel
-    risk_score: float
-    threat_categories: List[str]
-    virustotal: Optional[VirusTotalSummary]
     scanned_at: datetime
-    scan_duration_ms: int
-    message: str
+    url: str
+    verdict: str
+    risk_score: int
+    reason_1: Optional[str]
+    reason_2: Optional[str]
+    reason_3: Optional[str]
+    threat_categories: List[str]
 
-# =====================================
-# QR Scan Request
-# =====================================
-class QRScanRequest(BaseModel):
-    user_id: str
-    qr_data: str
+# ----------------------------------------
+# CAMERA OCR
+# ----------------------------------------
 
-# =====================================
-# Camera Scan Request
-# =====================================
 class CameraScanRequest(BaseModel):
-    user_id: str
     extracted_text: str
 
-# =====================================
-# Sandbox Analysis Result
-# =====================================
-class SandboxReport(BaseModel):
-    url: str
-    page_title: Optional[str]
-    status_code: Optional[int]
-    external_links: List[str]
-    scripts_found: List[str]
-    redirect_chain: List[str]
-    ip_address: Optional[str]
-    hosting_country: Optional[str]
-    malware_signals: List[str]
-    phishing_signals: List[str]
-    load_time_ms: Optional[int]
-    screenshot_url: Optional[str]
-    scanned_at: datetime
+class CameraScanResponse(BaseModel):
+    extracted_url: Optional[str]
+    is_url: bool
+    scan_result: Optional[ScanResponse] = None
 
-# =====================================
-# Scan History Item
-# =====================================
+# ----------------------------------------
+# QR SCAN
+# ----------------------------------------
+
+class QRScanRequest(BaseModel):
+    raw_qr_data: str
+
+class QRScanResponse(BaseModel):
+    extracted_url: Optional[str]
+    is_url: bool
+    scan_result: Optional[ScanResponse] = None
+
+# ----------------------------------------
+# SANDBOX ANALYSIS
+# ----------------------------------------
+
+class SSLInfo(BaseModel):
+    valid: Optional[bool] = None
+    issuer: Optional[str] = None
+    expiry: Optional[str] = None
+
+class SandboxRequest(BaseModel):
+    url: str
+    scan_id: str
+
+class SandboxReport(BaseModel):
+    sandbox_id: str
+    url: str
+    status_code: Optional[int] = None
+    page_title: Optional[str] = None
+    ip_address: Optional[str] = None
+    load_time_ms: Optional[int] = None
+    redirect_chain: List[str] = []
+    external_links: List[str] = []
+    ssl_info: Optional[SSLInfo] = None
+    # screenshot_path: Optional[str] = None
+    created_at: datetime
+
+# ----------------------------------------
+# SCAN HISTORY
+# ----------------------------------------
+
 class ScanHistoryItem(BaseModel):
     scan_id: str
     url: str
     risk_level: RiskLevel
-    source: ScanSource
+    risk_score: float
+    scan_source: ScanSource
     threat_categories: List[str]
     is_saved: bool
     scanned_at: datetime
 
-
-
+class ScanHistoryResponse(BaseModel):
+    items: List[ScanHistoryItem]
+    total: int
+    page: int
+    per_page: int
