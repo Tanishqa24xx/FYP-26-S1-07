@@ -61,7 +61,7 @@ class ScanResponse(BaseModel):
     scanned_at: datetime
     url: str
     verdict: str
-    risk_score: int
+    risk_score: float
     reason_1: Optional[str]
     reason_2: Optional[str]
     reason_3: Optional[str]
