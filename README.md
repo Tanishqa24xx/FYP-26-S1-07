@@ -65,13 +65,13 @@ WeblinkScanner/
 
 ├── backend/              # Python FastAPI source code
 
-│   ├── routers/          # API endpoints (Scan, Sandbox, Plans, FAQ)
+│      ├── routers/          # API endpoints (Scan, Sandbox, Plans, FAQ)
 
-│   ├── services/         # 3-Layer scanning logic & API integrations
+│      ├── services/         # 3-Layer scanning logic & API integrations
 
-│   ├── config.py         # Global settings & .env loader
+│      ├── config.py         # Global settings & .env loader
 
-│   └── main.py           # Application entry point
+│      └── main.py           # Application entry point
 
 ├── .gitignore            # Ignores venv, .env, large datasets
 
