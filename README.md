@@ -3,7 +3,9 @@
 ----------------------------------
 Weblink Scanner is an Android security application designed to protect users from malicious links, phishing attempts, and insecure web pages. It combines mobile accessibility with high‑level script inspection and remote sandboxing, allowing users to safely verify any link—captured via browser, QR code, or camera OCR—before interacting with it.
 
+
 🛡️ 3‑Layer Security Architecture
+
 The application uses a fail‑fast scanning engine that evaluates threats across three layers:
 
 1. Layer 1 — Global Threat Intelligence (Blacklist Check)
@@ -59,6 +61,7 @@ Environment: Windows‑optimized using WindowsSelectorEventLoopPolicy
 
 WeblinkScanner/
 ├── app/                  # Android (Kotlin/Compose) source code
+
 ├── backend/              # Python FastAPI source code
 │   ├── routers/          # API endpoints (Scan, Sandbox, Plans, FAQ)
 │   ├── services/         # 3-Layer scanning logic & API integrations
