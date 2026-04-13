@@ -60,15 +60,23 @@ Environment: Windows‑optimized using WindowsSelectorEventLoopPolicy
 ----------------------------------
 
 WeblinkScanner/
+
 ├── app/                  # Android (Kotlin/Compose) source code
 
 ├── backend/              # Python FastAPI source code
+
 │   ├── routers/          # API endpoints (Scan, Sandbox, Plans, FAQ)
+
 │   ├── services/         # 3-Layer scanning logic & API integrations
+
 │   ├── config.py         # Global settings & .env loader
+
 │   └── main.py           # Application entry point
+
 ├── .gitignore            # Ignores venv, .env, large datasets
+
 └── README.md             # Project documentation
+
 
 ----------------------------------
 ⚙️ Setup & Installation
