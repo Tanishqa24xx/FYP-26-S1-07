@@ -116,12 +116,14 @@ Open the project in Android Studio.
 Configure networking in NewRetrofitClient.kt:
 
 Emulator:
-<code/>
+<code>
 BASE_URL = "http://10.0.2.2:8000/"
+</code>
 
 Physical Device:
-<code/>
+<code>
 BASE_URL = "http://<your_PC_IP>:8000/"
+</code>
 
 Build and run on your device/emulator.
 
