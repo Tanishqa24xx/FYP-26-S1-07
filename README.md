@@ -61,42 +61,43 @@ Environment: Windows‑optimized using WindowsSelectorEventLoopPolicy
 
 WeblinkScanner/
 
-├── app/                  # Android (Kotlin/Compose) source code
+├── app/                           # Android (Kotlin/Compose) source code
 
-├── backend/              # Python FastAPI source code
+├── backend/                       # Python FastAPI source code
 
-│      ├── routers/          # API endpoints (Scan, Sandbox, Plans, FAQ)
+│            ├── routers/          # API endpoints (Scan, Sandbox, Plans, FAQ)
 
-│      ├── services/         # 3-Layer scanning logic & API integrations
+│            ├── services/         # 3-Layer scanning logic & API integrations
 
-│      ├── config.py         # Global settings & .env loader
+│            ├── config.py         # Global settings & .env loader
 
-│      └── main.py           # Application entry point
+│            └── main.py           # Application entry point
 
-├── .gitignore            # Ignores venv, .env, large datasets
+├── .gitignore                     # Ignores venv, .env, large datasets
 
-└── README.md             # Project documentation
+└── README.md                      # Project documentation
 
 
 ----------------------------------
 ⚙️ Setup & Installation
 ----------------------------------
 
-1. Backend Setup
+# 1. Backend Setup
    
 bash
-# 1. Open terminal in project root
-# 2. Create virtual environment
+1. Open terminal in project root
+2. Create virtual environment
 python -m venv venv
 
-# 3. Activate environment
+3. Activate environment
 venv\Scripts\activate
 
-# 4. Navigate to backend
+4. Navigate to backend
 cd backend
 
-# 5. Install dependencies
+5. Install dependencies
 pip install -r requirements.txt
+
 Create a .env file inside backend/:
 
 env
@@ -105,19 +106,25 @@ PHISHTANK_API_KEY=your_key
 URLSCAN_API_KEY=your_key
 
 Run the server:
+
 bash
+
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-2. Mobile Setup
+# 2. Mobile Setup
 Open the project in Android Studio.
 Configure networking in NewRetrofitClient.kt:
 
 Emulator:
+
 Code
+
 BASE_URL = "http://10.0.2.2:8000/"
 
 Physical Device:
+
 Code
+
 BASE_URL = "http://<your_PC_IP>:8000/"
 Build and run on your device/emulator.
 
