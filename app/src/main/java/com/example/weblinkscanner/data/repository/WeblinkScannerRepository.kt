@@ -55,6 +55,9 @@ class WeblinkScannerRepository(private val session: SessionStore) {
     suspend fun deleteLinks(ids: List<String>): Result<Map<String, String>> =
         safeCall { api.deleteLinks(bearer(), ids) }
 
+    suspend fun recheckSavedLinks(userId: String, links: List<RecheckUrlItem>): Result<RecheckResponse> =
+        safeCall { api.recheckSavedLinks(bearer(), RecheckRequest(userId, links)) }
+
     // --- Scan History ---
     suspend fun getScanHistory(userId: String): Result<List<NewScanResponse>> =
         safeCall { api.getScanHistory(bearer(), userId) }
