@@ -588,9 +588,12 @@ async def perform_scan(url: str) -> dict:
     score, categories = await heuristic_check(url)
 
     if score >= 40:
+        heuristic_verdict = "DANGEROUS"
+
         # DANGEROUS from heuristics - do NOT check trusted domain.
         # A high-scoring malicious URL is not made safe by appearing on a
         # popular hosting platform.
+
         return build_result(
             verdict="DANGEROUS",
             score=score,
@@ -603,21 +606,23 @@ async def perform_scan(url: str) -> dict:
     else:
         heuristic_verdict = "SAFE"
 
-    if not categories:
+    if not categories and heuristic_verdict == "SAFE":
         categories = ["No suspicious signals detected across all checks"]
+
 
     # --- Layer 3: Trusted domain check ---
     # Only runs when verdict so far is SAFE or SUSPICIOUS.
     # If trusted -> return SAFE (suppresses false positives for legitimate
     # auth/redirect flows on well-known platforms).
-    
-    if await is_trusted(url):
-        return build_result(
-            verdict="SAFE",
-            score=0,
-            categories=[],
-            blacklist_match=False,
-        )
+
+    if heuristic_verdict != "DANGEROUS":
+        if await is_trusted(url):
+            return build_result(
+                verdict="SAFE",
+                score=0,
+                categories=["Verified trusted domain (Umbrella Top-50k)"],
+                blacklist_match=False,
+            )
 
     return build_result(
         verdict=heuristic_verdict,
