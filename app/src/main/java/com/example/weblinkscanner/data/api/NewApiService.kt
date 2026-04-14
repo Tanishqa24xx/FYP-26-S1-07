@@ -89,6 +89,12 @@ interface NewApiService {
         @Body ids: List<String>
     ): Response<Map<String, String>>
 
+    @POST("saved-links/recheck")
+    suspend fun recheckSavedLinks(
+        @Header("Authorization") token: String,
+        @Body request: RecheckRequest
+    ): Response<RecheckResponse>
+
     @GET("faq/")
     suspend fun getFaqs(
         @Header("Authorization") token: String

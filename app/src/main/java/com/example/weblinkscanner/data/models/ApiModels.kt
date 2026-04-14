@@ -165,3 +165,28 @@ data class SavedLinkItem(
 )
 
 data class SavedLinksResponse(val links: List<SavedLinkItem>)
+
+
+// --- SAVED LINKS RECHECK ---
+
+data class RecheckUrlItem(
+    val id: String,
+    val url: String
+)
+
+data class RecheckRequest(
+    @SerializedName("user_id") val userId: String,
+    val links: List<RecheckUrlItem>
+)
+
+data class RecheckResultItem(
+    val id: String,
+    val url: String,
+    @SerializedName("new_risk_level") val newRiskLevel: String,
+    @SerializedName("last_checked_at") val lastCheckedAt: String
+)
+
+data class RecheckResponse(
+    val results: List<RecheckResultItem>,
+    val errors: List<String> = emptyList()
+)
