@@ -6,8 +6,30 @@ from fastapi import APIRouter, HTTPException, Query
 from schemas import SaveLinkRequest, SavedLinkItem, SavedLinksResponse
 from database import supabase
 from typing import List
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/saved-links", tags=["Saved Links"])
+
+
+# --- Request / Response models for recheck ---
+
+class RecheckUrlItem(BaseModel):
+    id: str
+    url: str
+
+class RecheckRequest(BaseModel):
+    user_id: str
+    links: List[RecheckUrlItem]
+
+class RecheckResultItem(BaseModel):
+    id: str
+    url: str
+    new_risk_level: str
+    last_checked_at: str
+
+class RecheckResponse(BaseModel):
+    results: List[RecheckResultItem]
+    errors: List[str] = []
 
 
 @router.post("/")
@@ -22,9 +44,9 @@ def save_link(body: SaveLinkRequest):
         if existing.data:
             supabase.table("saved_links") \
                 .update({
-                    "last_checked_at": datetime.now(timezone.utc).isoformat(),
-                    "type": body.risk_level or "UNKNOWN",
-                }) \
+                "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                "type": body.risk_level or "UNKNOWN",
+            }) \
                 .eq("user_id", body.user_id) \
                 .eq("url", body.url) \
                 .execute()
@@ -81,3 +103,43 @@ def delete_links(ids: List[str]):
         return {"message": f"Deleted {len(ids)} link(s)"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# --- Re-check endpoint (re-scans each URL) ---
+
+@router.post("/recheck", response_model=RecheckResponse)
+async def recheck_links(body: RecheckRequest):
+    """
+    Re-runs perform_scan() on each saved link URL.
+    Updates risk_level (type) and last_checked_at in the saved_links table.
+    Returns each link's new verdict so the Android app can update its UI
+    immediately without a second GET request.
+    """
+    from services.scan_service import perform_scan
+
+    results: List[RecheckResultItem] = []
+    errors: List[str] = []
+    now = datetime.now(timezone.utc).isoformat()
+
+    for item in body.links:
+        try:
+            scan_result = await perform_scan(item.url)
+            new_verdict = scan_result.get("verdict", "UNKNOWN")
+
+            # Update Supabase saved_links row
+            supabase.table("saved_links").update({
+                "type": new_verdict,
+                "last_checked_at": now,
+            }).eq("id", item.id).execute()
+
+            results.append(RecheckResultItem(
+                id = item.id,
+                url = item.url,
+                new_risk_level = new_verdict,
+                last_checked_at = now,
+            ))
+
+        except Exception as e:
+            errors.append(f"{item.url}: {str(e)[:80]}")
+
+    return RecheckResponse(results=results, errors=errors)
