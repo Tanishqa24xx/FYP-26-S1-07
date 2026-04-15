@@ -13,7 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.weblinkscanner.data.repository.SessionStore
 import com.example.weblinkscanner.data.repository.WeblinkScannerRepository
-import com.example.weblinkscanner.ui.theme.LinkScannerTheme
+import com.example.weblinkscanner.ui.theme.WeblinkScannerTheme
 import com.example.weblinkscanner.ui.screens.LoginScreen
 import com.example.weblinkscanner.ui.screens.SignUpScreen
 import com.example.weblinkscanner.ui.settings.SettingsScreen
@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
         val savedPlan    = TokenManager.getSavedPlan(this)
         val savedUserId  = TokenManager.getSavedUserId(this)
         setContent {
-            LinkScannerTheme {
+            WeblinkScannerTheme {
                 AppNavigation(
                     startDestination = if (hasSession) "menu" else "login",
                     sessionStore     = sessionStore,
