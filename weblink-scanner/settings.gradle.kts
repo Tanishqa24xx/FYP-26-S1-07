@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "LinkScanner"
+rootProject.name = "WeblinkScanner"
 include(":app")

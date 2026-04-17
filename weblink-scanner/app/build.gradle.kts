@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.linkscanner"
+    namespace = "com.example.weblinkscanner"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.linkscanner"
+        applicationId = "com.example.weblinkscanner"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -33,6 +33,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -53,6 +54,15 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
     implementation("androidx.compose.material:material-icons-extended")// version managed by BOM
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.camera:camera-core:1.3.0")
+    implementation("androidx.camera:camera-camera2:1.3.0")
+    implementation("androidx.camera:camera-lifecycle:1.3.0")
+    implementation("androidx.camera:camera-view:1.3.0")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
