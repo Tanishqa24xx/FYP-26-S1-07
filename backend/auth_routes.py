@@ -130,7 +130,7 @@ def forgot_password(request: ForgotPasswordRequest):
     try:
         supabase.auth.reset_password_email(
             request.email,
-            options={"redirect_to": "https://weblink-scanner.onrender.com"}
+            options={"redirect_to": "https://weblink-scanner.onrender.com/reset-password"}
         )
         return {"message": "Password reset email sent"}
     except Exception as e:
