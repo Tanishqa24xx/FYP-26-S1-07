@@ -1,3 +1,4 @@
+
 # Gradle files
 .gradle/
 build/
@@ -32,3 +33,21 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+ini
+# Python / Backend specific
+# This covers venv in root OR inside the backend folder
+venv/
+backend/venv/
+.env
+backend/.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Large Data Files (CRITICAL: Your status shows this is untracked)
+top-1m.csv.zip
+
+# OS specific
+.DS_Store
+Thumbs.db

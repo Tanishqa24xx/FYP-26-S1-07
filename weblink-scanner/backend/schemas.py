@@ -113,13 +113,14 @@ class SandboxReport(BaseModel):
     report_url:     Optional[str] = None
     sandbox_uuid:   Optional[str] = None
 
+    analysis_source: Optional[str] = None
+
     # Premium enrichment — ad/tracker/script analysis
     detected_ad_tech:   List[str] = []
     detected_trackers:  List[str] = []
     suspicious_scripts: List[str] = []
     ad_heavy:           bool      = False
 
-    analysis_source: Optional[str] = None
 
 
 # --- PLANS: using camelCase aliases to match Android ApiModels ---
@@ -163,6 +164,9 @@ class SavedLinkItem(BaseModel):
 
 class SavedLinksResponse(BaseModel):
     links: List[SavedLinkItem]
+
+
+# --- Rescan saved links ---
 
 class RescanResponse(BaseModel):
     message:       str

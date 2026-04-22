@@ -10,7 +10,7 @@ router = APIRouter()
 
 PLAN_CATALOGUE = [
     PlanInfo(name="Free", price="$0/month", scan_limit="5 scans/day", features=["Manual URL scanning","Camera OCR scanning","Basic Risk Level Classification","Save Important Links","Standard Security Analysis","Sandbox Environment","Last 5 scans in History"]),
-    PlanInfo(name="Standard", price="$4.99/month", scan_limit="Unlimited scans", features=["Manual URL scanning","Camera OCR scanning","Unlimited scans","Detailed Risk Level Classification","Save Important Links","Detailed Security Analysis","Alert Threshold Notification","Sandbox Environment","Last 30 days scan history","Export history (CSV)"]),
+    PlanInfo(name="Standard", price="$4.99/month", scan_limit="Unlimited scans", features=["Manual URL scanning","Camera OCR scanning","Unlimited scans","Detailed Risk Level Classification","Save Important Links","Detailed Security Analysis","Alert Threshold Notification","Sandbox Environment","Last 30 days scan history","Export history (CSV + PDF)"]),
     PlanInfo(name="Premium", price="$9.99/month", scan_limit="Unlimited scans", features=["All Standard features","Advanced Multi-layer Security Analysis","Full scan history","Export history (CSV + PDF)","Ad-heavy website warnings","Script & tracker detection"]),
 ]
 

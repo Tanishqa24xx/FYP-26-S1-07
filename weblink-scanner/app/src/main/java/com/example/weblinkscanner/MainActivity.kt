@@ -13,10 +13,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.weblinkscanner.data.repository.SessionStore
 import com.example.weblinkscanner.data.repository.WeblinkScannerRepository
-import com.example.weblinkscanner.ui.theme.LinkScannerTheme
+import com.example.weblinkscanner.ui.theme.WeblinkScannerTheme
 import com.example.weblinkscanner.ui.screens.LoginScreen
 import com.example.weblinkscanner.ui.screens.SignUpScreen
 import com.example.weblinkscanner.ui.settings.SettingsScreen
+import com.example.weblinkscanner.ui.screens.BrowseScanScreen
 import com.example.weblinkscanner.ui.screens.EditProfileScreen
 import com.example.weblinkscanner.ui.menu.MenuScreen
 import com.example.weblinkscanner.ui.screens.ScanUrlScreen
@@ -28,7 +29,6 @@ import com.example.weblinkscanner.ui.screens.SecurityAnalysisScreen
 import com.example.weblinkscanner.ui.screens.MyPlanScreen
 import com.example.weblinkscanner.ui.screens.PlansScreen
 import com.example.weblinkscanner.ui.screens.UpgradePlanScreen
-import com.example.weblinkscanner.ui.screens.BrowseScanScreen
 import com.example.weblinkscanner.ui.screens.ScanHistoryScreen
 import com.example.weblinkscanner.ui.screens.SavedLinksScreen
 import kotlinx.coroutines.MainScope
@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
         val savedPlan    = TokenManager.getSavedPlan(this)
         val savedUserId  = TokenManager.getSavedUserId(this)
         setContent {
-            LinkScannerTheme {
+            WeblinkScannerTheme {
                 AppNavigation(
                     startDestination = if (hasSession) "menu" else "login",
                     sessionStore     = sessionStore,
@@ -96,14 +96,12 @@ fun AppNavigation(
     val sandboxViewModel = remember { SandboxViewModel(repository) }
     val planViewModel    = remember { PlanViewModel(repository) }
 
-    // Sync loggedInPlan whenever planViewModel refreshes (e.g. after upgrade)
+    // Sync loggedInPlan whenever planViewModel refreshes (e.g. after upgrade or screen resume)
     val myPlanState by planViewModel.myPlan.collectAsState()
     LaunchedEffect(myPlanState) {
-        val updatedPlan = myPlanState?.currentPlan
-        if (!updatedPlan.isNullOrBlank() && updatedPlan != loggedInPlan) {
-            loggedInPlan = updatedPlan
-            // Only update the plan key — do not touch the token
-            TokenManager.savePlan(navController.context, updatedPlan)
+        val newPlan = myPlanState?.currentPlan
+        if (!newPlan.isNullOrBlank()) {
+            loggedInPlan = newPlan.lowercase()
         }
     }
 
@@ -163,11 +161,6 @@ fun AppNavigation(
 
         // --- Menu ---
         composable("menu") {
-            LaunchedEffect(loggedInUserId) {
-                if (loggedInUserId != "00000000-0000-0000-0000-000000000000") {
-                    planViewModel.loadMyPlan(loggedInUserId)
-                }
-            }
             MenuScreen(
                 userName                = loggedInName,
                 userEmail               = loggedInEmail,
@@ -235,7 +228,7 @@ fun AppNavigation(
                 viewModel               = scanViewModel,
                 repository              = repository,
                 userId                  = loggedInUserId,
-                userPlan                = myPlanState?.currentPlan ?: loggedInPlan,
+                userPlan                = loggedInPlan,
                 onSandboxClick          = { url, scanId ->
                     val encoded = java.net.URLEncoder.encode(url, "UTF-8")
                     navController.navigate("sandbox/$encoded/$scanId")
@@ -283,7 +276,7 @@ fun AppNavigation(
                 scanId           = scanId,
                 verdict          = verdict,
                 threatCategories = categories,
-                userPlan         = myPlanState?.currentPlan ?: loggedInPlan,
+                userPlan         = loggedInPlan,
                 onBack           = { navController.popBackStack() }
             )
         }
@@ -307,6 +300,7 @@ fun AppNavigation(
 
         // --- Plans ---
         composable("plans") {
+            LaunchedEffect(Unit) { planViewModel.loadMyPlan(loggedInUserId) }
             PlansScreen(
                 viewModel      = planViewModel,
                 userId         = loggedInUserId,
@@ -321,8 +315,16 @@ fun AppNavigation(
             arguments = listOf(navArgument("plan") { type = NavType.StringType })
         ) { back ->
             val plan = back.arguments?.getString("plan") ?: "standard"
-            UpgradePlanScreen(viewModel = planViewModel, userId = loggedInUserId, preSelectedPlan = plan,
-                onBack = { navController.popBackStack() })
+            LaunchedEffect(Unit) { planViewModel.loadMyPlan(loggedInUserId) }
+            UpgradePlanScreen(
+                viewModel       = planViewModel,
+                userId          = loggedInUserId,
+                preSelectedPlan = plan,
+                onBack          = {
+                    planViewModel.loadMyPlan(loggedInUserId)
+                    navController.popBackStack()
+                }
+            )
         }
 
         // --- Scan History ---
@@ -330,7 +332,7 @@ fun AppNavigation(
             ScanHistoryScreen(
                 repository = repository,
                 userId     = loggedInUserId,
-                userPlan   = myPlanState?.currentPlan ?: loggedInPlan,
+                userPlan   = loggedInPlan,
                 onBack     = { navController.popBackStack() }
             )
         }
@@ -403,17 +405,9 @@ fun AppNavigation(
                 onSave       = { newName, newEmail ->
                     loggedInName  = newName
                     loggedInEmail = newEmail
-                    TokenManager.saveSession(
-                        context = navController.context,
-                        token   = TokenManager.getToken(navController.context) ?: "",
-                        name    = newName,
-                        email   = newEmail,
-                        plan    = loggedInPlan,
-                        userId  = loggedInUserId
-                    )
                     navController.popBackStack()
                 },
-                onCancel = { navController.popBackStack() }
+                onCancel     = { navController.popBackStack() }
             )
         }
 
@@ -422,10 +416,11 @@ fun AppNavigation(
             BrowseScanScreen(
                 repository = repository,
                 userId     = loggedInUserId,
-                userPlan   = myPlanState?.currentPlan ?: loggedInPlan,
+                userPlan   = loggedInPlan,
                 onBack     = { navController.popBackStack() }
             )
         }
-
     }
 }
+
+

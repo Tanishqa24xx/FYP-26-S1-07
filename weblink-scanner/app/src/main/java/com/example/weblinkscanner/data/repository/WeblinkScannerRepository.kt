@@ -1,7 +1,8 @@
 package com.example.weblinkscanner.data.repository
 
 import com.example.weblinkscanner.data.api.NewRetrofitClient
-import com.example.weblinkscanner.data.models.*import kotlinx.coroutines.Dispatchers
+import com.example.weblinkscanner.data.models.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import retrofit2.Response
@@ -51,11 +52,11 @@ class WeblinkScannerRepository(private val session: SessionStore) {
     suspend fun getSavedLinks(userId: String): Result<SavedLinksResponse> =
         safeCall { api.getSavedLinks(bearer(), userId) }
 
-    suspend fun rescanSavedLinks(userId: String, force: Boolean = false, selectedIds: List<String> = emptyList()): Result<RescanResponse> =
-        safeCall { api.rescanSavedLinks(bearer(), userId, force, selectedIds) }
-
     suspend fun deleteLinks(ids: List<String>): Result<Map<String, String>> =
         safeCall { api.deleteLinks(bearer(), ids) }
+
+    suspend fun recheckSavedLinks(userId: String, links: List<RecheckUrlItem>): Result<RecheckResponse> =
+        safeCall { api.recheckSavedLinks(bearer(), RecheckRequest(userId, links)) }
 
     // --- Scan History ---
     suspend fun getScanHistory(userId: String): Result<List<NewScanResponse>> =
@@ -63,9 +64,6 @@ class WeblinkScannerRepository(private val session: SessionStore) {
 
     suspend fun deleteHistoryItems(ids: List<String>): Result<Map<String, String>> =
         safeCall { api.deleteHistoryItems(bearer(), ids) }
-
-    suspend fun updateProfile(userId: String, name: String, email: String): Result<Map<String, String>> =
-        safeCall { api.updateProfile(bearer(), UpdateProfileRequest(userId, name, email)) }
 
     suspend fun deleteAccount(userId: String): Result<Map<String, String>> =
         safeCall { api.deleteAccount(bearer(), userId) }
@@ -84,6 +82,18 @@ class WeblinkScannerRepository(private val session: SessionStore) {
             } else emptyList()
         } catch (e: Exception) { emptyList() }
     }
+
+    // --- Rescan saved links (quota-aware) ---
+    suspend fun rescanSavedLinks(userId: String, force: Boolean = false, selectedIds: List<String> = emptyList()): Result<RescanResponse> =
+        safeCall { api.rescanSavedLinks(bearer(), userId, force, selectedIds) }
+
+    // --- Export scan history ---
+    suspend fun exportScanHistory(userId: String, fmt: String): Result<okhttp3.ResponseBody> =
+        safeCall { api.exportScanHistory(bearer(), userId, fmt) }
+
+    // --- Update profile ---
+    suspend fun updateProfile(userId: String, name: String, email: String): Result<Map<String, String>> =
+        safeCall { api.updateProfile(bearer(), UpdateProfileRequest(userId, name, email)) }
 
     // --- Generic safe call ---
     private suspend fun <T> safeCall(call: suspend () -> Response<T>): Result<T> =

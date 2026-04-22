@@ -11,6 +11,7 @@
 
 import asyncio
 import httpx
+from urllib.parse import urlparse
 from config import settings
 
 SUBMIT_URL  = "https://urlscan.io/api/v1/scan/"
@@ -23,7 +24,6 @@ SCREENSHOT  = "https://urlscan.io/screenshots/{uuid}.png"
 INITIAL_WAIT  = 5   # seconds to wait before the very first poll
 POLL_INTERVAL = 4   # seconds between subsequent polls
 MAX_POLLS     = 15  # 15 × 4s = 60s total polling window
-
 
 async def run_sandbox(url: str) -> dict:
     if not url.startswith(("http://", "https://")):
@@ -60,7 +60,6 @@ async def run_sandbox(url: str) -> dict:
 
     async with httpx.AsyncClient(timeout=15) as client:
         for attempt in range(MAX_POLLS):
-            # Wait before polling: longer initial wait, then regular interval
             wait = INITIAL_WAIT if attempt == 0 else POLL_INTERVAL
             await asyncio.sleep(wait)
             try:
@@ -74,7 +73,6 @@ async def run_sandbox(url: str) -> dict:
                 result = r.json()
                 break
             elif r.status_code == 404:
-                # Still processing - keep polling
                 continue
             else:
                 print(f"[urlscan] Poll {attempt+1} unexpected status {r.status_code}")
@@ -89,12 +87,12 @@ async def run_sandbox(url: str) -> dict:
 
 
 def extract(result: dict, uuid: str, original_url: str) -> dict:
-    page    = result.get("page",    {})
-    lists   = result.get("lists",   {})
-    data    = result.get("data",    {})
-    stats   = result.get("stats",   {})
-    meta    = result.get("meta",    {})
-    task    = result.get("task",    {})
+    page     = result.get("page",     {})
+    lists    = result.get("lists",    {})
+    data     = result.get("data",     {})
+    stats    = result.get("stats",    {})
+    meta     = result.get("meta",     {})
+    task     = result.get("task",     {})
     verdicts = result.get("verdicts", {})
 
     # --- Page info ---
@@ -123,10 +121,10 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
         "valid_from": tls_valid_from,
         "valid_days": str(tls_valid_days) if tls_valid_days is not None else None,
         "age_days":   str(tls_age_days)   if tls_age_days   is not None else None,
-        "protocol":   None,   # urlscan does not expose TLS version
+        "protocol":   None,
     }
 
-    # --- Redirect chain: task URL -> final page URL ---
+    # --- Redirect chain ---
     redirect_chain = []
     task_url = task.get("url", original_url)
     if task_url:
@@ -139,9 +137,8 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
     ips_contacted     = lists.get("ips",     [])
     urls_contacted    = lists.get("urls",    [])
 
-    # --- External links on page ---
-    # data.links contains {href, text} objects; we extract href
-    raw_links    = data.get("links", [])
+    # --- External links ---
+    raw_links      = data.get("links", [])
     external_links = list({
         lnk.get("href", "")
         for lnk in raw_links
@@ -158,21 +155,21 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
     ][:10]
 
     # --- Technologies (Wappalyzer) ---
-    wappa = meta.get("processors", {}).get("wappa", {}).get("data", [])
+    wappa         = meta.get("processors", {}).get("wappa", {}).get("data", [])
     tech_detected = [w.get("app") for w in wappa if w.get("app")]
 
     # --- Stats ---
-    total_reqs   = stats.get("requests",  None)
-    total_size   = stats.get("dataLength", None)
+    total_reqs    = stats.get("requests",   None)
+    total_size    = stats.get("dataLength", None)
     total_size_kb = round(total_size / 1024) if total_size else None
 
     # --- urlscan verdict ---
     urlscan_verdict = verdicts.get("urlscan", {})
-    verdict_score   = urlscan_verdict.get("score")      # -100 to 100
+    verdict_score   = urlscan_verdict.get("score")
     verdict_cats    = urlscan_verdict.get("categories", [])
     malicious       = verdict_score is not None and verdict_score > 0
 
-    # --- ASN info (for hosting section) ---
+    # --- ASN info ---
     asn_info = None
     if asn or asnname:
         asn_info = {"asn": asn, "asnname": asnname, "country": country}
@@ -180,10 +177,10 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
     # --- Screenshot URL ---
     screenshot_url = SCREENSHOT.format(uuid=uuid)
 
-    # --- Load time (urlscan does not expose this directly. use timing if present) ---
-    timing     = data.get("timing", {})
-    load_event = timing.get("loadEventEnd")
-    nav_start  = timing.get("navigationStart")
+    # --- Load time ---
+    timing       = data.get("timing", {})
+    load_event   = timing.get("loadEventEnd")
+    nav_start    = timing.get("navigationStart")
     load_time_ms = None
     if load_event and nav_start:
         try:
@@ -191,62 +188,136 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
         except Exception:
             pass
 
-    # --- Ad networks and trackers (Premium enrichment) ---
-    AD_TECH_KEYWORDS = {
-        "google ads", "google adsense", "google admanager", "google doubleclick",
-        "doubleclick", "adsense", "admanager", "adroll", "adnxs", "appnexus",
-        "amazon advertising", "amazon associates", "media.net", "outbrain",
-        "taboola", "revcontent", "propellerads", "mgid", "sharethrough",
-        "criteo", "pubmatic", "rubicon", "openx", "triplelift", "sovrn",
-        "indexexchange", "33across", "smartadserver", "teads", "undertone",
-        "conversant", "spotx", "yieldmo", "bidswitch",
-    }
-    TRACKER_DOMAINS = {
-        "google-analytics.com", "googletagmanager.com", "googletagservices.com",
-        "doubleclick.net", "googlesyndication.com",
-        "connect.facebook.net", "facebook.net",
-        "analytics.twitter.com", "static.ads-twitter.com",
-        "snap.licdn.com", "ads.linkedin.com",
-        "hotjar.com", "fullstory.com", "mouseflow.com", "clarity.ms",
-        "mixpanel.com", "amplitude.com", "segment.com", "segment.io",
-        "intercom.io", "intercom.com",
-        "criteo.com", "criteo.net", "adnxs.com", "taboola.com", "outbrain.com",
-        "scorecardresearch.com", "quantserve.com", "comscore.com",
-        "omtrdc.net", "demdex.net", "2mdn.net", "rubiconproject.com",
-        "pubmatic.com", "openx.net", "adsrvr.org",
-        "amazon-adsystem.com", "media.net", "adroll.com",
-        "nr-data.net", "newrelic.com",
-        "pardot.com", "marketo.net", "hubspot.com", "hs-scripts.com",
-    }
-    SAFE_CDN_DOMAINS = {
-        "jquery.com", "bootstrapcdn.com", "cloudflare.com", "jsdelivr.net",
-        "unpkg.com", "cdnjs.cloudflare.com", "googleapis.com", "gstatic.com",
-    }
+    # -------------------------------------------------------------------------
+    # Premium enrichment: Ads, Trackers, Suspicious Scripts
+    #
+    # All detection uses only what urlscan returns from data.requests.
+    # Confirmed field paths from live API response:
+    #   req["request"]["type"]           → resource type (Script/XHR/Image/Fetch/Ping)
+    #   req["request"]["request"]["url"] → actual request URL
+    #   req["response"]["dataLength"]    → response body size in bytes
+    #
+    # ADS: URL path contains "/ad", "/ads/", "adfuel", "advert", "sponsor"
+    #      OR script filename contains "ad" as a whole word segment
+    #      These are structural URL conventions used by all ad systems.
+    #
+    # TRACKERS: Behavioural signals from request type + URL path
+    #   - Ping requests (browser-native tracking API, always third-party tracking)
+    #   - XHR/Fetch to paths like /collect, /beacon, /pixel, /track, /analytics
+    #   - Images ≤ 1KB from third-party hosts (tracking pixels)
+    #
+    # SCRIPTS: Structural signals
+    #   - Third-party Script over HTTP on HTTPS page
+    #   - Script filename is a hex hash (obfuscation pattern)
+    # -------------------------------------------------------------------------
 
-    detected_ad_tech = [
-        t for t in tech_detected
-        if any(kw in t.lower() for kw in AD_TECH_KEYWORDS)
+    import re as _re
+
+    raw_requests = data.get("requests", [])
+
+    # URL path segments used exclusively by ad delivery systems
+    AD_PATH_SIGNALS = [
+        "/ads/", "/ad/", "/advert", "/advertisement",
+        "adfuel", "adserver", "admanager", "adtech",
+        "prebid", "gpt.js", "/gpt/", "adsystem",
+        "sponsor", "promoted", "pagead",
     ]
-    detected_trackers = [
-        d for d in domains_contacted
-        if any(d == td or d.endswith("." + td) for td in TRACKER_DOMAINS)
+
+    # URL path segments used by tracking/analytics endpoints
+    # These are HTTP-standard naming conventions, not vendor names
+    TRACKER_PATH_SIGNALS = [
+        "/collect", "/beacon", "/pixel", "/track", "/ping",
+        "/analytics", "/hit", "/event", "/log", "/telemetry",
+        "/impression", "/conversion", "/metric", "/stat",
     ]
-    suspicious_scripts = [
-        u for u in urls_contacted
-        if u.endswith(".js")
-        and apex_domain and apex_domain not in u
-        and not any(cdn in u for cdn in SAFE_CDN_DOMAINS)
-    ][:20]
 
-    all_ad_signals = list({*detected_ad_tech, *detected_trackers})
-    ad_heavy = len(all_ad_signals) >= 3
+    detected_ad_tech: list  = []
+    detected_trackers: list = []
+    suspicious_scripts: list = []
 
-    # Debug log so you can verify in backend terminal
-    print(f"[sandbox] tech_detected={tech_detected}", flush=True)
-    print(f"[sandbox] domains_contacted={domains_contacted[:10]}", flush=True)
-    print(f"[sandbox] detected_ad_tech={detected_ad_tech}", flush=True)
-    print(f"[sandbox] detected_trackers={detected_trackers}", flush=True)
-    print(f"[sandbox] ad_heavy={ad_heavy} (signals={len(all_ad_signals)})", flush=True)
+    seen_ad_urls:      set = set()
+    seen_tracker_hosts: set = set()
+    seen_script_urls:  set = set()
+
+    for req in raw_requests:
+        try:
+            outer    = req.get("request", {}) or {}       # Chrome CDP wrapper
+            inner    = outer.get("request", {}) or {}     # actual HTTP request
+            resp_top = req.get("response", {}) or {}      # response wrapper
+
+            req_url    = inner.get("url", "") or ""
+            req_type   = outer.get("type", "") or ""      # Script/XHR/Image/Fetch/Ping
+            data_len   = safe_int(resp_top.get("dataLength")) or 0
+
+            if not req_url:
+                continue
+
+            parsed     = urlparse(req_url)
+            req_host   = parsed.netloc.lower()
+            req_path   = parsed.path.lower()
+            req_scheme = parsed.scheme.lower()
+            req_fname  = req_path.split("/")[-1]          # filename portion
+
+            is_third_party = apex_domain and apex_domain not in req_host
+
+            # --- ADS ---
+            # Signal: URL path contains ad delivery segments
+            if any(sig in req_path or sig in req_url.lower() for sig in AD_PATH_SIGNALS):
+                label = req_host or req_url[:60]
+                if label not in seen_ad_urls:
+                    seen_ad_urls.add(label)
+                    detected_ad_tech.append(label)
+                continue   # don't double-count as tracker
+
+            # --- TRACKERS ---
+            if not is_third_party:
+                pass  # only flag third-party tracker behaviour
+
+            elif req_type == "Ping":
+                # Browser Ping API — always tracking, never legitimate content
+                if req_host not in seen_tracker_hosts:
+                    seen_tracker_hosts.add(req_host)
+                    detected_trackers.append(req_host)
+
+            elif req_type in ("XHR", "Fetch"):
+                # Third-party data requests to tracking-named endpoints
+                if any(sig in req_path for sig in TRACKER_PATH_SIGNALS):
+                    if req_host not in seen_tracker_hosts:
+                        seen_tracker_hosts.add(req_host)
+                        detected_trackers.append(req_host)
+
+            elif req_type == "Image" and data_len <= 1024:
+                # Tiny third-party image = tracking pixel
+                if req_host not in seen_tracker_hosts:
+                    seen_tracker_hosts.add(req_host)
+                    detected_trackers.append(f"{req_host} (pixel, {data_len}B)")
+
+            # --- SCRIPTS ---
+            elif req_type == "Script" and is_third_party:
+                flag = None
+
+                # Signal 1: HTTP script on HTTPS page (mixed content / suspicious)
+                if req_scheme == "http" and original_url.startswith("https"):
+                    flag = f"[HTTP on HTTPS] {req_url}"
+
+                # Signal 2: Hex hash filename (obfuscated/fingerprinted script)
+                elif _re.fullmatch(r'[0-9a-f-]{8,}', req_fname.split(".")[0]):
+                    flag = f"[hash filename] {req_url}"
+
+                if flag and req_url not in seen_script_urls:
+                    seen_script_urls.add(req_url)
+                    suspicious_scripts.append(req_url)
+
+        except Exception:
+            pass
+
+    suspicious_scripts = suspicious_scripts[:20]
+    ad_heavy = len(detected_ad_tech) >= 3 or len(detected_trackers) >= 5
+
+    print(f"[sandbox] detected_ad_tech={detected_ad_tech[:5]}", flush=True)
+    print(f"[sandbox] detected_trackers={detected_trackers[:5]}", flush=True)
+    print(f"[sandbox] suspicious_scripts={suspicious_scripts[:3]}", flush=True)
+    print(f"[sandbox] ad_heavy={ad_heavy}", flush=True)
 
     return {
         # Core page info
@@ -281,9 +352,9 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
         "total_requests":    total_reqs,
 
         # Verdict from urlscan
-        "verdict_score":     verdict_score,
+        "verdict_score":      verdict_score,
         "verdict_categories": verdict_cats,
-        "malicious":         malicious,
+        "malicious":          malicious,
 
         # Hosting
         "asn_info":          asn_info,
@@ -294,7 +365,7 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
         "report_url":        f"https://urlscan.io/result/{uuid}/",
         "sandbox_uuid":      uuid,
 
-        # Premium enrichment — ad/tracker/script analysis
+        # Premium enrichment
         "detected_ad_tech":   detected_ad_tech,
         "detected_trackers":  detected_trackers,
         "suspicious_scripts": suspicious_scripts,

@@ -63,11 +63,6 @@ object TokenManager {
     fun getSavedPlan(context: Context): String = prefs(context).getString(KEY_PLAN,    "FREE") ?: "FREE"
     fun getSavedUserId(context: Context): String = prefs(context).getString(KEY_USER_ID, "00000000-0000-0000-0000-000000000000") ?: "00000000-0000-0000-0000-000000000000"
 
-    // --- Update just the plan (called after plan change, without touching token) ---
-    fun savePlan(context: Context, plan: String) {
-        prefs(context).edit().putString(KEY_PLAN, plan).apply()
-    }
-
     // --- Clear on logout ---
     fun clearSession(context: Context) {
         prefs(context).edit().clear().apply()

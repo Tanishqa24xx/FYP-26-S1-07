@@ -128,7 +128,7 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // --- Scans remaining banner (free plan only) ---
+            // --- Scans remaining banner — Free plan only ---
             AnimatedVisibility(
                 visible = remaining != null && !bannerDismissed && !isPaidPlan,
                 enter   = slideInVertically() + fadeIn(),

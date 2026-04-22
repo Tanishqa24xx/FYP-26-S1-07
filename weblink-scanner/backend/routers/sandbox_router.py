@@ -70,12 +70,13 @@ def build_report(report: dict, original_url: str) -> SandboxReport:
         report_url     = report.get("report_url"),
         sandbox_uuid   = report.get("sandbox_uuid"),
 
+        analysis_source = report.get("analysis_source"),
+
+        # Premium: ad/tracker detection
         detected_ad_tech   = report.get("detected_ad_tech",   []),
         detected_trackers  = report.get("detected_trackers",  []),
         suspicious_scripts = report.get("suspicious_scripts", []),
         ad_heavy           = report.get("ad_heavy",           False),
-
-        analysis_source = report.get("analysis_source"),
     )
 
 

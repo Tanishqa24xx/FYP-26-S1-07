@@ -118,7 +118,7 @@ def save_scan(user_id: str, url: str, result: dict, source: str) -> str:
 async def scan_url(body: ScanRequest):
     user_id = body.user_id or "00000000-0000-0000-0000-000000000000"
     remaining, plan = check_quota_and_get_plan(user_id)
-    result = await perform_scan(body.url, plan=plan)
+    result = await perform_scan(body.url)
     scan_id = save_scan(user_id, body.url, result, "manual")
     return ScanResponse(
         scan_id = scan_id,
@@ -142,7 +142,7 @@ async def scan_camera(body: CameraScanRequest):
         return CameraScanResponse(extracted_url=None, is_url=False, scan_result=None)
     user_id = body.user_id or "00000000-0000-0000-0000-000000000000"
     remaining, plan = check_quota_and_get_plan(user_id)
-    result = await perform_scan(extracted_url, plan=plan)
+    result = await perform_scan(extracted_url)
     scan_id = save_scan(user_id, extracted_url, result, "camera")
     scan_response = ScanResponse(
         scan_id = scan_id,
@@ -167,7 +167,7 @@ async def scan_qr(body: QRScanRequest):
         return QRScanResponse(extracted_url=None, is_url=False, scan_result=None)
     user_id = body.user_id or "00000000-0000-0000-0000-000000000000"
     remaining, plan = check_quota_and_get_plan(user_id)
-    result = await perform_scan(extracted_url, plan=plan)
+    result = await perform_scan(extracted_url)
     scan_id = save_scan(user_id, extracted_url, result, "qr")
     scan_response = ScanResponse(
         scan_id = scan_id,
@@ -325,7 +325,7 @@ def export_scan_history(
                 headers={"Content-Disposition": f"attachment; filename={filename}"}
             )
 
-        # --- PDF export ---
+        # --- PDF export (Standard + Premium) ---
         elif fmt == "pdf":
             try:
                 from reportlab.lib.pagesizes import A4

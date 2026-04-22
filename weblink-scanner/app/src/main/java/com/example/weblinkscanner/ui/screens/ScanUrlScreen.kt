@@ -111,39 +111,9 @@ fun ScanUrlScreen(
             Text("Check if a link is safe", fontSize = 14.sp, color = TextMuted)
             Spacer(Modifier.height(20.dp))
 
-            // --- Plan quota bar ---
-            // Paid plans: show unlimited badge. Free: show count + limit-reached banner.
-            if (!isFree) {
-                // Standard / Premium - unlimited scans
-                Card(
-                    modifier  = Modifier.fillMaxWidth(),
-                    shape     = RoundedCornerShape(14.dp),
-                    colors    = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7)),
-                    elevation = CardDefaults.cardElevation(0.dp),
-                    border    = BorderStroke(1.dp, Color(0xFF16A34A).copy(alpha = 0.3f))
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.AllInclusive, null, tint = Color(0xFF16A34A),
-                                modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("$planName Plan  •  Unlimited scans",
-                                fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                                color = Color(0xFF16A34A))
-                        }
-                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF16A34A).copy(alpha = 0.15f)) {
-                            Text("Unlimited",
-                                fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                                color = Color(0xFF16A34A),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
-                        }
-                    }
-                }
-            } else if (limitReached) {
+            // --- Plan quota bar — Free plan only ---
+            // Paid plans (Standard/Premium) see nothing here — no badge, no bar.
+            if (isFree && limitReached) {
                 Card(
                     modifier  = Modifier.fillMaxWidth(),
                     shape     = RoundedCornerShape(14.dp),
@@ -168,7 +138,7 @@ fun ScanUrlScreen(
                         )
                     }
                 }
-            } else {
+            } else if (isFree) {
                 Card(
                     modifier  = Modifier.fillMaxWidth(),
                     shape     = RoundedCornerShape(14.dp),

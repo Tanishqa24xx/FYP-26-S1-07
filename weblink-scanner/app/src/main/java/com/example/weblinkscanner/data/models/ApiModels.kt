@@ -120,13 +120,13 @@ data class SandboxReport(
     @SerializedName("report_url") val reportUrl: String?,
     @SerializedName("sandbox_uuid") val sandboxUuid: String?,
 
+    @SerializedName("analysis_source") val analysisSource: String?,
+
     // Premium enrichment — ad/tracker/script analysis
     @SerializedName("detected_ad_tech") val detectedAdTech: List<String> = emptyList(),
     @SerializedName("detected_trackers") val detectedTrackers: List<String> = emptyList(),
     @SerializedName("suspicious_scripts") val suspiciousScripts: List<String> = emptyList(),
-    @SerializedName("ad_heavy") val adHeavy: Boolean = false,
-
-    @SerializedName("analysis_source") val analysisSource: String?
+    @SerializedName("ad_heavy") val adHeavy: Boolean = false
 )
 
 // --- PLANS ---
@@ -139,10 +139,10 @@ data class PlanInfo(
 )
 
 data class UserPlanResponse(
-    @SerializedName("currentPlan") val currentPlan: String,
-    @SerializedName("scansToday") val scansToday: Int,
-    @SerializedName("dailyLimit") val dailyLimit: Int?,
-    @SerializedName("planDetails") val planDetails: PlanInfo
+    val currentPlan: String,
+    val scansToday: Int,
+    val dailyLimit: Int?,
+    val planDetails: PlanInfo
 )
 
 data class AllPlansResponse(val plans: List<PlanInfo>)
@@ -172,6 +172,34 @@ data class SavedLinkItem(
 
 data class SavedLinksResponse(val links: List<SavedLinkItem>)
 
+
+// --- SAVED LINKS RECHECK ---
+
+data class RecheckUrlItem(
+    val id: String,
+    val url: String
+)
+
+data class RecheckRequest(
+    @SerializedName("user_id") val userId: String,
+    val links: List<RecheckUrlItem>
+)
+
+data class RecheckResultItem(
+    val id: String,
+    val url: String,
+    @SerializedName("new_risk_level") val newRiskLevel: String,
+    @SerializedName("last_checked_at") val lastCheckedAt: String
+)
+
+data class RecheckResponse(
+    val results: List<RecheckResultItem>,
+    val errors: List<String> = emptyList()
+)
+
+
+// --- Rescan ---
+
 data class RescanResponse(
     val message: String,
     @SerializedName("quota_warning") val quotaWarning: Boolean = false,
@@ -179,5 +207,13 @@ data class RescanResponse(
     val total: Int = 0,
     val scanned: Int = 0,
     val updated: Int = 0,
-    val skipped: Int = 0,
+    val skipped: Int = 0
+)
+
+// --- Update Profile ---
+
+data class UpdateProfileRequest(
+    @SerializedName("user_id") val userId: String,
+    val name: String,
+    val email: String
 )

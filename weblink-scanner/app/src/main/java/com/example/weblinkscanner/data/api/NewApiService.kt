@@ -28,12 +28,6 @@ interface NewApiService {
         @Body request: ChangePasswordRequest
     ): Call<ChangePasswordResponse>
 
-    @POST("update-profile")
-    suspend fun updateProfile(
-        @Header("Authorization") token: String,
-        @Body request: UpdateProfileRequest
-    ): Response<Map<String, String>>
-
     // --- PLANS ---
     @GET("plan/")
     suspend fun getMyPlan(
@@ -90,19 +84,17 @@ interface NewApiService {
         @Path("userId") userId: String
     ): Response<SavedLinksResponse>
 
-    @POST("saved-links/rescan")
-    suspend fun rescanSavedLinks(
-        @Header("Authorization") token: String,
-        @Query("user_id") userId: String,
-        @Query("force") force: Boolean = false,
-        @Query("selected_ids") selectedIds: List<String> = emptyList()
-    ): Response<RescanResponse>
-
     @POST("saved-links/delete")
     suspend fun deleteLinks(
         @Header("Authorization") token: String,
         @Body ids: List<String>
     ): Response<Map<String, String>>
+
+    @POST("saved-links/recheck")
+    suspend fun recheckSavedLinks(
+        @Header("Authorization") token: String,
+        @Body request: RecheckRequest
+    ): Response<RecheckResponse>
 
     @GET("faq/")
     suspend fun getFaqs(
@@ -126,5 +118,29 @@ interface NewApiService {
     suspend fun deleteAccount(
         @Header("Authorization") token: String,
         @Query("user_id") userId: String
+    ): Response<Map<String, String>>
+
+    // --- Rescan saved links ---
+    @POST("saved-links/rescan")
+    suspend fun rescanSavedLinks(
+        @Header("Authorization") token: String,
+        @Query("user_id") userId: String,
+        @Query("force") force: Boolean = false,
+        @Query("selected_ids") selectedIds: List<String> = emptyList()
+    ): Response<RescanResponse>
+
+    // --- Export scan history ---
+    @GET("scan/export")
+    suspend fun exportScanHistory(
+        @Header("Authorization") token: String,
+        @Query("user_id") userId: String,
+        @Query("fmt") fmt: String
+    ): Response<okhttp3.ResponseBody>
+
+    // --- Update profile ---
+    @POST("update-profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body request: UpdateProfileRequest
     ): Response<Map<String, String>>
 }

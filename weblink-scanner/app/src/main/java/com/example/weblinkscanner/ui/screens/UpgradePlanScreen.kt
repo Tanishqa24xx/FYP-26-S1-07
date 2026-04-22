@@ -72,7 +72,7 @@ private val PLAN_OPTIONS = listOf(
             "Detailed Security Analysis",
             "Alert Threshold Notification",
             "Last 30 days scan history",
-            "Export history (CSV)"
+            "Export history (CSV + PDF)"
         )
     ),
     PlanOption(

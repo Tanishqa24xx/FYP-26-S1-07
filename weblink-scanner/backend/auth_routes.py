@@ -168,11 +168,26 @@ class UpdateProfileRequest(BaseModel):
 @router.post("/update-profile")
 def update_profile(request: UpdateProfileRequest):
     try:
+        clean_email = request.email.strip().lower()
+        clean_name  = request.name.strip()
+
+        # Step 1: Update Supabase Auth email via admin client (no confirmation email)
+        admin_client.auth.admin.update_user_by_id(
+            request.user_id,
+            {"email": clean_email}
+        )
+
+        # Step 2: Update users table (name + email)
         supabase.table("users").update({
-            "name":  request.name.strip(),
-            "email": request.email.strip().lower(),
+            "name":  clean_name,
+            "email": clean_email,
         }).eq("id", request.user_id).execute()
-        return {"message": "Profile updated successfully", "name": request.name.strip(), "email": request.email.strip().lower()}
+
+        return {
+            "message": "Profile updated successfully",
+            "name":    clean_name,
+            "email":   clean_email
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=safe_error(e))
 

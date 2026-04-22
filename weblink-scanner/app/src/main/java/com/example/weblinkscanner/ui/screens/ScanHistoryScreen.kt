@@ -6,11 +6,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
 import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.*
@@ -44,6 +47,9 @@ private val AmberBg     = Color(0xFFFEF3C7)
 private val RedDanger   = Color(0xFFDC2626)
 private val RedBg       = Color(0xFFFEE2E2)
 
+// Sort options
+private enum class SortOrder { NEWEST_FIRST, OLDEST_FIRST }
+
 @Composable
 fun ScanHistoryScreen(
     repository: WeblinkScannerRepository,
@@ -61,11 +67,11 @@ fun ScanHistoryScreen(
     var showClearAll by remember { mutableStateOf(false) }
     var showClearSel by remember { mutableStateOf(false) }
 
-    // Search and filter state - Standard and Premium only
-    var searchQuery by remember { mutableStateOf("") }
-    var filterVerdict by remember { mutableStateOf("ALL") } // ALL, SAFE, SUSPICIOUS, DANGEROUS
+    // Search, filter and sort state - paid plans only
+    var searchQuery   by remember { mutableStateOf("") }
+    var filterVerdict by remember { mutableStateOf("ALL") }
+    var sortOrder     by remember { mutableStateOf(SortOrder.NEWEST_FIRST) }
 
-    // Load history on open
     LaunchedEffect(userId) {
         isLoading = true
         errorMsg  = null
@@ -76,9 +82,9 @@ fun ScanHistoryScreen(
         isLoading = false
     }
 
-    // Derived filtered list (search + verdict filter, paid plans only)
-    val displayItems = remember(items, searchQuery, filterVerdict) {
-        items.filter { item ->
+    // Filtered + sorted list
+    val displayItems = remember(items, searchQuery, filterVerdict, sortOrder) {
+        val filtered = items.filter { item ->
             val matchesSearch = searchQuery.isBlank() ||
                     (item.url ?: "").contains(searchQuery, ignoreCase = true) ||
                     item.riskLevel.contains(searchQuery, ignoreCase = true)
@@ -86,6 +92,12 @@ fun ScanHistoryScreen(
                     item.riskLevel.uppercase() == filterVerdict
             matchesSearch && matchesFilter
         }
+        if (isPaidPlan) {
+            when (sortOrder) {
+                SortOrder.NEWEST_FIRST -> filtered.sortedByDescending { it.scannedAt }
+                SortOrder.OLDEST_FIRST -> filtered.sortedBy { it.scannedAt }
+            }
+        } else filtered
     }
 
     // --- Dialogs ---
@@ -131,7 +143,6 @@ fun ScanHistoryScreen(
         )
     }
 
-    // --- Layout ---
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -160,8 +171,9 @@ fun ScanHistoryScreen(
             Text("Your recent URL scans", fontSize = 14.sp, color = TextMuted)
             Spacer(Modifier.height(24.dp))
 
-            // Search bar - Standard and Premium only
+            // Search + filter + sort — paid plans only
             if (isPaidPlan) {
+                // Search bar
                 OutlinedTextField(
                     value         = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -185,34 +197,69 @@ fun ScanHistoryScreen(
                 )
                 Spacer(Modifier.height(10.dp))
 
-                // Verdict filter chips
+                // Verdict filter chips + sort toggle on same row
                 Row(
                     modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    listOf("ALL", "SAFE", "SUSPICIOUS", "DANGEROUS").forEach { verdict ->
-                        val isActive = filterVerdict == verdict
-                        val chipColor = when (verdict) {
-                            "SAFE"      -> Color(0xFF16A34A)
-                            "SUSPICIOUS"-> Color(0xFFD97706)
-                            "DANGEROUS" -> Color(0xFFDC2626)
-                            else        -> Blue600
-                        }
-                        FilterChip(
-                            selected = isActive,
-                            onClick  = { filterVerdict = verdict },
-                            label    = { Text(verdict, fontSize = 11.sp) },
-                            colors   = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = chipColor.copy(alpha = 0.15f),
-                                selectedLabelColor     = chipColor
+                    // Verdict chips
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("ALL", "SAFE", "SUSPICIOUS", "DANGEROUS").forEach { verdict ->
+                            val isActive = filterVerdict == verdict
+                            val chipColor = when (verdict) {
+                                "SAFE"       -> Color(0xFF16A34A)
+                                "SUSPICIOUS" -> Color(0xFFD97706)
+                                "DANGEROUS"  -> Color(0xFFDC2626)
+                                else         -> Blue600
+                            }
+                            FilterChip(
+                                selected = isActive,
+                                onClick  = { filterVerdict = verdict },
+                                label    = { Text(verdict, fontSize = 10.sp) },
+                                colors   = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = chipColor.copy(alpha = 0.15f),
+                                    selectedLabelColor     = chipColor
+                                )
                             )
+                        }
+                    }
+
+                    // Sort toggle button
+                    IconButton(
+                        onClick = {
+                            sortOrder = if (sortOrder == SortOrder.NEWEST_FIRST)
+                                SortOrder.OLDEST_FIRST else SortOrder.NEWEST_FIRST
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (sortOrder == SortOrder.NEWEST_FIRST)
+                                Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
+                            contentDescription = if (sortOrder == SortOrder.NEWEST_FIRST)
+                                "Newest first" else "Oldest first",
+                            tint     = Blue600,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
+                }
+
+                // Sort label
+                Row(
+                    modifier          = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Sort, null, tint = TextMuted, modifier = Modifier.size(13.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        if (sortOrder == SortOrder.NEWEST_FIRST) "Newest first" else "Oldest first",
+                        fontSize = 11.sp, color = TextMuted
+                    )
                 }
                 Spacer(Modifier.height(10.dp))
             }
 
-            // List card - uses displayItems (filtered for paid, raw for free)
+            // History list
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -305,7 +352,7 @@ fun ScanHistoryScreen(
 
             Spacer(Modifier.height(10.dp))
 
-            // Export button — Standard (CSV only) and Premium (CSV + PDF)
+            // Export — Standard (CSV) and Premium (CSV + PDF)
             if (isPaidPlan) {
                 val isPremium = userPlan.lowercase() == "premium"
                 var showExportMenu by remember { mutableStateOf(false) }
@@ -321,21 +368,16 @@ fun ScanHistoryScreen(
                         border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
                         colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
                     ) {
-                        Icon(
-                            Icons.Default.Share, null,
+                        Icon(Icons.Default.Share, null,
                             tint     = if (items.isNotEmpty()) Blue600 else TextMuted,
-                            modifier = Modifier.size(18.dp)
-                        )
+                            modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Export History",
-                            fontWeight = FontWeight.SemiBold,
-                            color      = if (items.isNotEmpty()) Blue600 else TextMuted
-                        )
+                        Text("Export History", fontWeight = FontWeight.SemiBold,
+                            color = if (items.isNotEmpty()) Blue600 else TextMuted)
                     }
 
                     DropdownMenu(
-                        expanded        = showExportMenu,
+                        expanded         = showExportMenu,
                         onDismissRequest = { showExportMenu = false }
                     ) {
                         DropdownMenuItem(
@@ -353,23 +395,21 @@ fun ScanHistoryScreen(
                                 Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(18.dp))
                             }
                         )
-                        if (isPremium) {
-                            DropdownMenuItem(
-                                text    = { Text("Export as PDF") },
-                                onClick = {
-                                    showExportMenu = false
-                                    val url = "$baseUrl?user_id=$userId&fmt=pdf"
-                                    val intent = android.content.Intent(
-                                        android.content.Intent.ACTION_VIEW,
-                                        android.net.Uri.parse(url)
-                                    )
-                                    context.startActivity(intent)
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(18.dp))
-                                }
-                            )
-                        }
+                        DropdownMenuItem(
+                            text    = { Text("Export as PDF") },
+                            onClick = {
+                                showExportMenu = false
+                                val url = "$baseUrl?user_id=$userId&fmt=pdf"
+                                val intent = android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse(url)
+                                )
+                                context.startActivity(intent)
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(18.dp))
+                            }
+                        )
                     }
                 }
                 Spacer(Modifier.height(10.dp))

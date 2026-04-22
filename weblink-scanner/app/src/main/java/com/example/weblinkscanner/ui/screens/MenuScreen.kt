@@ -211,15 +211,17 @@ fun MenuScreen(
                 description = "Links you've bookmarked",
                 onClick = onNavigateToSavedLinks
             )
+
             if (userPlan.lowercase() in listOf("standard", "premium")) {
                 Spacer(modifier = Modifier.height(10.dp))
                 MenuRow(
-                    label = "Browse & Scan",
-                    icon = Icons.Default.TravelExplore,
+                    label       = "Browse & Scan",
+                    icon        = Icons.Default.TravelExplore,
                     description = "Auto-scan links while browsing",
-                    onClick = onNavigateToBrowseScan
+                    onClick     = onNavigateToBrowseScan
                 )
             }
+
             Spacer(modifier = Modifier.height(10.dp))
             MenuRow(
                 label = "Settings",
