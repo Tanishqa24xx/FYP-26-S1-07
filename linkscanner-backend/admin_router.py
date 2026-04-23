@@ -50,10 +50,10 @@ def get_admin_stats():
         paid_users   = sum(1 for u in users_data if u.get("plan", "free").lower() != "free")
 
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        scans_result = supabase.table("scan_records").select("id").gte("created_at", today).execute()
+        scans_result = supabase.table("scan_history").select("scan_id").gte("created_at", today).execute()
         scans_today  = len(scans_result.data or [])
 
-        flagged_result = supabase.table("scan_history").select("id").eq("verdict", "DANGEROUS").execute()
+        flagged_result = supabase.table("scan_history").select("scan_id").eq("verdict", "DANGEROUS").execute()
         flagged_count  = len(flagged_result.data or [])
 
         return {
@@ -352,11 +352,11 @@ def security_monitor():
 def list_scan_records(verdict: Optional[str] = Query(None)):
     try:
         query = supabase.table("scan_history").select(
-            "id, url, verdict, risk_score, threat_categories, scanned_at, user_id"
+            "scan_id, url, verdict, risk_level, threat_categories, created_at, user_id"
         )
         if verdict:
             query = query.eq("verdict", verdict.upper())
-        result = query.order("scanned_at", desc=True).limit(200).execute()
+        result = query.order("created_at", desc=True).limit(200).execute()
         records = result.data or []
         # Batch-fetch user emails
         user_ids = list({r["user_id"] for r in records if r.get("user_id")})
@@ -375,13 +375,13 @@ def list_scan_records(verdict: Optional[str] = Query(None)):
 def list_flagged_links(verdict: Optional[str] = Query(None)):
     try:
         query = supabase.table("scan_history").select(
-            "id, url, verdict, risk_score, threat_categories, scanned_at, user_id"
+            "scan_id, url, verdict, risk_level, threat_categories, created_at, user_id"
         )
         if verdict:
             query = query.eq("verdict", verdict.upper())
         else:
             query = query.in_("verdict", ["DANGEROUS", "SUSPICIOUS"])
-        result = query.order("scanned_at", desc=True).limit(200).execute()
+        result = query.order("created_at", desc=True).limit(200).execute()
         records = result.data or []
         user_ids = list({r["user_id"] for r in records if r.get("user_id")})
         if user_ids:
