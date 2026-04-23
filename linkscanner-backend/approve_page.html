@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LinkScanner Account Approval</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4ff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 48px 40px;
+      max-width: 460px;
+      width: 90%;
+      text-align: center;
+    }
+    .icon  { font-size: 56px; margin-bottom: 16px; }
+    h1     { font-size: 24px; color: #0f172a; margin-bottom: 12px; }
+    p      { font-size: 15px; color: #64748b; line-height: 1.6; }
+    .badge {
+      display: inline-block;
+      border-radius: 8px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 16px 0;
+    }
+    .footer { margin-top: 24px; font-size: 12px; color: #94a3b8; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #1d4ed8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="spinner" id="spinner"></div>
+    <h1 id="title">Processing…</h1>
+    <p id="body">Please wait while we process your request.</p>
+    <div class="footer">LinkScanner Admin Panel</div>
+  </div>
+
+  <script>
+    /* ── Config ──────────────────────────────────────────────────────────────── */
+    const SUPABASE_URL  = 'https://gcpqarrvkcizefszmyxi.supabase.co';
+    const SERVICE_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjcHFhcnJ2a2NpemVmc3pteXhpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTgwOTIyNiwiZXhwIjoyMDg3Mzg1MjI2fQ.7opGKn-G_CqP4hJXPZYROYp2rt0Bp9x-P5EWMnRGflc';
+
+    /* ── Helpers ─────────────────────────────────────────────────────────────── */
+    function renderCard(icon, title, badgeText, badgeColor, bodyHtml) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('title').textContent = title;
+      document.getElementById('body').innerHTML    = bodyHtml;
+
+      const iconEl = document.createElement('div');
+      iconEl.className   = 'icon';
+      iconEl.textContent = icon;
+      document.getElementById('card').insertBefore(iconEl, document.getElementById('spinner'));
+
+      if (badgeText) {
+        const b = document.createElement('div');
+        b.className   = 'badge';
+        b.textContent = badgeText;
+        b.style.background = badgeColor + '20';
+        b.style.color      = badgeColor;
+        document.getElementById('title').insertAdjacentElement('afterend', b);
+      }
+    }
+
+    function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+    /* ── Main ────────────────────────────────────────────────────────────────── */
+    async function run() {
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get('user_id');
+      const action = params.get('action');
+
+      if (!userId || !['approve', 'reject'].includes(action)) {
+        renderCard('⚠️', 'Invalid Link', null, null,
+          'This approval link is missing required parameters. Please check the email.');
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'apikey': SERVICE_KEY
+      };
+
+      try {
+        /* 1. Fetch user -------------------------------------------------------- */
+        const getRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/users?id=eq.${userId}&select=name,email,role,status`,
+          { headers }
+        );
+        const users = await getRes.json();
+
+        if (!users || users.length === 0) {
+          renderCard('❓', 'User Not Found', null, null,
+            'No account was found with this ID. It may have already been deleted.');
+          return;
+        }
+
+        const user = users[0];
+
+        /* 2. Already actioned? ------------------------------------------------- */
+        if (user.status !== 'pending') {
+          const icon  = user.status === 'approved' ? '✅' : '❌';
+          const color = user.status === 'approved' ? '#16a34a' : '#dc2626';
+          renderCard(icon, `Already ${cap(user.status)}`, cap(user.status), color,
+            `<b>${user.name}</b> (${user.email}) was already <b>${user.status}</b>.<br>No further action needed.`);
+          return;
+        }
+
+        /* 3. Apply action ------------------------------------------------------ */
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
+        const patchRes  = await fetch(
+          `${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`,
+          {
+            method: 'PATCH',
+            headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ status: newStatus })
+          }
+        );
+
+        if (patchRes.ok || patchRes.status === 204) {
+          const icon  = action === 'approve' ? '✅' : '❌';
+          const color = action === 'approve' ? '#16a34a' : '#dc2626';
+          const label = action === 'approve' ? 'Approved' : 'Rejected';
+          const msg   = action === 'approve'
+            ? `<b>${user.name}</b> (${user.email}) has been approved as <b>${user.role.replace(/_/g, ' ')}</b>.<br><br>They can now log in to LinkScanner.`
+            : `<b>${user.name}</b> (${user.email}) has been rejected.<br><br>They will see a rejection message when they attempt to log in.`;
+          renderCard(icon, `Account ${label}`, label, color, msg);
+        } else {
+          const errText = await patchRes.text();
+          renderCard('⚠️', 'Update Failed', null, null,
+            `Could not update the account status.<br><small style="color:#94a3b8;font-size:12px">${errText}</small>`);
+        }
+
+      } catch (e) {
+        renderCard('⚠️', 'Network Error', null, null,
+          `Could not connect to the database.<br><small style="color:#94a3b8;font-size:12px">${e.message || 'Unknown error'}</small>`);
+      }
+    }
+
+    run();
+  </script>
+</body>
+</html>
