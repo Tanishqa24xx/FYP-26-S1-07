@@ -38,8 +38,11 @@ fun SettingsScreen(
     onNavigateToAutoLogout: () -> Unit        = {},
     onNavigateToHelpFaq: () -> Unit           = {},
     onNavigateToWarningStrictness: () -> Unit = {},
+    onNavigateToSupport: () -> Unit           = {},
     onDeleteAccount: () -> Unit               = {},
-    onBack: () -> Unit                        = {}
+    onBack: () -> Unit                        = {},
+    showWarningStrictness: Boolean            = true,
+    showReportSupport: Boolean                = true
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -170,14 +173,25 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            SettingsRow(
-                label       = "Warning Strictness",
-                description = "Set how sensitive scan warnings are",
-                icon        = Icons.Default.Tune,
-                onClick     = onNavigateToWarningStrictness
-            )
+            if (showReportSupport) {
+                SettingsRow(
+                    label       = "Report / Support",
+                    description = "Send a report to the platform team",
+                    icon        = Icons.Default.SupportAgent,
+                    onClick     = onNavigateToSupport
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            if (showWarningStrictness) {
+                SettingsRow(
+                    label       = "Warning Strictness",
+                    description = "Set how sensitive scan warnings are",
+                    icon        = Icons.Default.Tune,
+                    onClick     = onNavigateToWarningStrictness
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             // Delete Account — red tinted to signal danger
             SettingsRow(

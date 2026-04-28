@@ -34,6 +34,12 @@ class CreateSupportReplyRequest(BaseModel):
 class UpdateSupportStatusRequest(BaseModel):
     status: str
 
+class CreateUserSupportRequest(BaseModel):
+    user_id:  str
+    email:    str
+    subject:  str
+    message:  str
+
 class CreateFaqRequest(BaseModel):
     question: str
     answer: str
@@ -228,8 +234,10 @@ def generate_report(start_date: Optional[str] = Query(None), end_date: Optional[
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SUPPORT REQUESTS
+# IMPORTANT: static/specific routes MUST come before parameterised {request_id}
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ── PM: list all support requests ────────────────────────────────────────────
 @router.get("/support")
 def list_support(status: Optional[str] = Query(None)):
     try:
@@ -241,6 +249,44 @@ def list_support(status: Optional[str] = Query(None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ── User: Submit a new support request  (STATIC — must be before {request_id})
+@router.post("/support/submit")
+def submit_support(request: CreateUserSupportRequest):
+    try:
+        result = supabase.table("support_requests").insert({
+            "user_id":    request.user_id,
+            "email":      request.email,
+            "subject":    request.subject,
+            "message":    request.message,
+            "status":     "open",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }).execute()
+        return result.data[0] if result.data else {}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ── User: Get their own support requests + replies  (STATIC — before {request_id})
+@router.get("/support/my/{user_id}")
+def get_my_support(user_id: str):
+    try:
+        result = supabase.table("support_requests").select("*") \
+            .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
+            .execute()
+        requests = result.data or []
+        # Attach replies to each request
+        for req in requests:
+            replies = supabase.table("support_replies").select("*") \
+                .eq("request_id", req["id"]) \
+                .order("created_at") \
+                .execute()
+            req["replies"] = replies.data or []
+        return {"requests": requests}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ── PM: Get one support request by id  (PARAMETERISED — after static routes)
 @router.get("/support/{request_id}")
 def get_support(request_id: str):
     try:
@@ -254,6 +300,7 @@ def get_support(request_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ── PM: Reply to a support request ───────────────────────────────────────────
 @router.post("/support/{request_id}/reply")
 def reply_support(request_id: str, request: CreateSupportReplyRequest):
     try:
@@ -272,6 +319,24 @@ def reply_support(request_id: str, request: CreateSupportReplyRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# ── User: Reply to a support request ─────────────────────────────────────────
+@router.post("/support/{request_id}/user-reply")
+def user_reply_support(request_id: str, request: CreateSupportReplyRequest):
+    try:
+        result = supabase.table("support_replies").insert({
+            "request_id":   request_id,
+            "message":      request.message,
+            "sender_type":  "user",
+            "sender_email": request.sender_email or ""
+        }).execute()
+        supabase.table("support_requests").update({
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }).eq("id", request_id).execute()
+        return result.data[0] if result.data else {}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ── PM: Update support request status ────────────────────────────────────────
 @router.put("/support/{request_id}/status")
 def update_support_status(request_id: str, request: UpdateSupportStatusRequest):
     try:

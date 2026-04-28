@@ -47,25 +47,79 @@ class QRScanResponse(BaseModel):
 # ── SANDBOX ───────────────────────────────────────────────────────────────────
 
 class SSLInfo(BaseModel):
-    valid:  Optional[bool]  = None
-    issuer: Optional[str]   = None
-    expiry: Optional[str]   = None
+    valid:       Optional[bool]  = None
+    issuer:      Optional[str]   = None
+    valid_from:  Optional[str]   = None   # ISO-8601 from urlscan tlsValidFrom
+    valid_days:  Optional[str]   = None   # validity period in days
+    age_days:    Optional[str]   = None   # age of cert at scan time
+    protocol:    Optional[str]   = None   # TLS version if available
+
+class AsnInfo(BaseModel):
+    asn:     Optional[str] = None
+    asnname: Optional[str] = None
+    country: Optional[str] = None
 
 class SandboxRequest(BaseModel):
-    url:     str
+    url: str
     scan_id: str
 
 class SandboxReport(BaseModel):
-    sandbox_id:     str
-    url:            str
-    status_code:    Optional[int]      = None
-    page_title:     Optional[str]      = None
-    ip_address:     Optional[str]      = None
-    load_time_ms:   Optional[int]      = None
-    redirect_chain: List[str]          = []
-    external_links: List[str]          = []
-    ssl_info:       Optional[SSLInfo]  = None
-    created_at:     datetime
+    sandbox_id:   str
+    url:          str
+    created_at:   datetime
+
+    # Page overview
+    status_code:  Optional[int]  = None
+    page_title:   Optional[str]  = None
+    ip_address:   Optional[str]  = None
+    load_time_ms: Optional[int]  = None
+    final_url:    Optional[str]  = None
+    server:       Optional[str]  = None
+    mime_type:    Optional[str]  = None
+    ptr:          Optional[str]  = None
+    country:      Optional[str]  = None
+    city:         Optional[str]  = None
+    apex_domain:  Optional[str]  = None
+
+    # SSL / TLS
+    ssl_info:     Optional[SSLInfo] = None
+
+    # Network
+    redirect_chain:    List[str] = []
+    external_links:    List[str] = []
+    domains_contacted: List[str] = []
+    domain_count:      Optional[int] = None
+    ips_contacted:     List[str] = []
+    ip_count:          Optional[int] = None
+    urls_contacted:    List[str] = []
+
+    # Content
+    tech_detected:    List[str] = []
+    console_messages: List[str] = []
+    total_size_kb:    Optional[int]  = None
+    total_requests:   Optional[int]  = None
+
+    # urlscan verdict
+    verdict_score:      Optional[int]  = None
+    verdict_categories: List[str]      = []
+    malicious:          Optional[bool] = None
+
+    # Hosting
+    asn_info: Optional[AsnInfo] = None
+
+    # Screenshot and report
+    screenshot_url: Optional[str] = None
+    screenshot_b64: Optional[str] = None
+    report_url:     Optional[str] = None
+    sandbox_uuid:   Optional[str] = None
+
+    analysis_source: Optional[str] = None
+
+    # Premium enrichment — ad/tracker/script analysis
+    detected_ad_tech:   List[str] = []
+    detected_trackers:  List[str] = []
+    suspicious_scripts: List[str] = []
+    ad_heavy:           bool      = False
 
 # ── PLANS — use camelCase aliases to match Android ApiModels ──────────────────
 
@@ -108,3 +162,14 @@ class SavedLinkItem(BaseModel):
 
 class SavedLinksResponse(BaseModel):
     links: List[SavedLinkItem]
+
+# ── RESCAN SAVED LINKS ────────────────────────────────────────────────────────
+
+class RescanResponse(BaseModel):
+    message:       str
+    quota_warning: bool = False
+    remaining:     int  = 0
+    total:         int  = 0
+    scanned:       int  = 0
+    updated:       int  = 0
+    skipped:       int  = 0

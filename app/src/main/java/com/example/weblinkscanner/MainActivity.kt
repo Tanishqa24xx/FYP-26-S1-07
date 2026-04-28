@@ -13,7 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.weblinkscanner.data.repository.SessionStore
 import com.example.weblinkscanner.data.repository.WeblinkScannerRepository
-import com.example.weblinkscanner.ui.theme.LinkScannerTheme
+import com.example.weblinkscanner.ui.theme.WeblinkScannerTheme
 import com.example.weblinkscanner.ui.screens.LoginScreen
 import com.example.weblinkscanner.ui.screens.SignUpScreen
 import com.example.weblinkscanner.ui.settings.SettingsScreen
@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import com.example.weblinkscanner.ui.screens.HelpFaqScreen
 import com.example.weblinkscanner.ui.screens.AutoLogoutScreen
 import com.example.weblinkscanner.ui.screens.WarningStrictnessScreen
+import com.example.weblinkscanner.ui.screens.UserSupportScreen
 import com.example.weblinkscanner.ui.screens.BrowseScanScreen
 import com.example.weblinkscanner.utils.WarningStrictnessManager
 import com.example.weblinkscanner.ui.screens.admin.AdminDashboardScreen
@@ -76,7 +77,7 @@ class MainActivity : ComponentActivity() {
             else                                          -> "login"
         }
         setContent {
-            LinkScannerTheme {
+            WeblinkScannerTheme {
                 AppNavigation(
                     startDestination = startDest,
                     sessionStore     = sessionStore,
@@ -376,11 +377,15 @@ fun AppNavigation(
 
         // ── Settings ───────────────────────────────────────────────────────────
         composable("settings") {
+            val isRegularUser = loggedInRole == "user"
             SettingsScreen(
                 onNavigateToEditProfile      = { navController.navigate("edit_profile") },
                 onNavigateToAutoLogout       = { navController.navigate("auto_logout") },
                 onNavigateToHelpFaq          = { navController.navigate("help_faq") },
                 onNavigateToWarningStrictness = { navController.navigate("warning_strictness") },
+                onNavigateToSupport          = { navController.navigate("user_support") },
+                showWarningStrictness        = isRegularUser,
+                showReportSupport            = isRegularUser,
                 onDeleteAccount = {
                     val userIdToDelete = loggedInUserId
                     android.util.Log.d("DELETE", "Starting delete for userId=$userIdToDelete")
@@ -420,6 +425,16 @@ fun AppNavigation(
         // ── Warning Strictness ─────────────────────────────────────────────────
         composable("warning_strictness") {
             WarningStrictnessScreen(userId = loggedInUserId, onBack = { navController.popBackStack() })
+        }
+
+        // ── User Support / Report ──────────────────────────────────────────────
+        composable("user_support") {
+            UserSupportScreen(
+                repository = repository,
+                userId     = loggedInUserId,
+                userEmail  = loggedInEmail,
+                onBack     = { navController.popBackStack() }
+            )
         }
 
         // ── Browse & Scan (Standard + Premium) ────────────────────────────────

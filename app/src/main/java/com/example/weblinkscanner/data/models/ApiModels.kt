@@ -215,3 +215,37 @@ data class UpdateProfileRequest(
     val name: String,
     val email: String
 )
+
+// ── USER SUPPORT / REPORT ─────────────────────────────────────────────────────
+
+data class CreateSupportRequest(
+    @SerializedName("user_id") val userId:  String,
+    val email:   String,
+    val subject: String,
+    val message: String
+)
+
+data class SupportReply(
+    val id:           String,
+    @SerializedName("request_id")  val requestId:  String,
+    val message:      String,
+    @SerializedName("sender_type") val senderType: String, // "user" or "platform_manager"
+    @SerializedName("sender_email") val senderEmail: String?,
+    @SerializedName("created_at")  val createdAt:  String?
+)
+
+data class UserSupportRequest(
+    val id:         String,
+    @SerializedName("user_id")    val userId:    String,
+    val email:      String?,
+    val subject:    String,
+    val message:    String,
+    val status:     String,  // "open", "in_progress", "resolved"
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?,
+    val replies:    List<SupportReply> = emptyList()
+)
+
+data class UserSupportListResponse(
+    val requests: List<UserSupportRequest>
+)

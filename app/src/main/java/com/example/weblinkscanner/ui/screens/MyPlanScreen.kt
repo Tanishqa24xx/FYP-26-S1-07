@@ -34,22 +34,22 @@ private val AmberBg     = Color(0xFFFEF3C7)
 
 @Composable
 fun MyPlanScreen(
-    viewModel:            PlanViewModel,
-    userId:               String = "00000000-0000-0000-0000-000000000000",
+    viewModel: PlanViewModel,
+    userId: String = "00000000-0000-0000-0000-000000000000",
     onViewPaidPlansClick: () -> Unit,
-    onBack:               () -> Unit
+    onBack: () -> Unit
 ) {
-    val myPlan  by viewModel.myPlan.collectAsState()
+    val myPlan by viewModel.myPlan.collectAsState()
     val loading by viewModel.isLoading.collectAsState()
 
     // Reload every time this screen is shown
     LaunchedEffect(userId) { viewModel.loadMyPlan(userId) }
 
-    val planName   = myPlan?.currentPlan?.uppercase() ?: "FREE"
+    val planName = myPlan?.currentPlan?.uppercase() ?: "FREE"
     val dailyLimit = myPlan?.dailyLimit ?: 5
     val scansToday = myPlan?.scansToday ?: 0
-    val remaining  = (dailyLimit - scansToday).coerceAtLeast(0)
-    val isPaid     = planName != "FREE"
+    val remaining = (dailyLimit - scansToday).coerceAtLeast(0)
+    val isPaid = planName != "FREE"
 
     Box(
         modifier = Modifier
@@ -109,7 +109,11 @@ fun MyPlanScreen(
                             color      = if (isPaid) AmberWarn else Blue600
                         )
                         Text(
-                            if (isPaid) "Premium access active" else "Basic access",
+                            when (planName) {
+                                "PREMIUM"  -> "Premium access active"
+                                "STANDARD" -> "Standard access active"
+                                else       -> "Basic access"
+                            },
                             fontSize = 13.sp,
                             color    = TextMuted
                         )
@@ -132,7 +136,7 @@ fun MyPlanScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Usage card
+            // Usage card - paid plans show unlimited, free plan shows count + bar
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -143,24 +147,43 @@ fun MyPlanScreen(
                     Text("Today's Usage", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     Spacer(Modifier.height(12.dp))
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        UsageStat("Scans Used",      "$scansToday",  TextPrimary)
-                        UsageStat("Daily Limit",     "$dailyLimit",  TextPrimary)
-                        UsageStat("Remaining",       "$remaining",   if (remaining > 0) GreenPass else Color(0xFFDC2626))
+                    if (isPaid) {
+                        // Paid plans: unlimited scans - just show how many done today
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            UsageStat("Scans Today", "$scansToday", TextPrimary)
+                            Surface(shape = RoundedCornerShape(8.dp), color = GreenBg) {
+                                Text(
+                                    "Unlimited",
+                                    fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                    color = GreenPass,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text("No daily limit - scan as many links as you need.", fontSize = 11.sp, color = TextMuted)
+                    } else {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            UsageStat("Scans Used",  "$scansToday", TextPrimary)
+                            UsageStat("Daily Limit", "$dailyLimit", TextPrimary)
+                            UsageStat("Remaining",   "$remaining",  if (remaining > 0) GreenPass else Color(0xFFDC2626))
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        val progress = if (dailyLimit > 0) scansToday.toFloat() / dailyLimit else 0f
+                        LinearProgressIndicator(
+                            progress   = { progress.coerceIn(0f, 1f) },
+                            modifier   = Modifier.fillMaxWidth().height(8.dp)
+                                .then(Modifier.background(Color.Transparent, RoundedCornerShape(4.dp))),
+                            color      = if (progress > 0.8f) Color(0xFFDC2626) else Blue600,
+                            trackColor = DividerCol,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text("$scansToday of $dailyLimit scans used today", fontSize = 11.sp, color = TextMuted)
                     }
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // Progress bar
-                    val progress = if (dailyLimit > 0) scansToday.toFloat() / dailyLimit else 0f
-                    LinearProgressIndicator(
-                        progress    = { progress.coerceIn(0f, 1f) },
-                        modifier    = Modifier.fillMaxWidth().height(8.dp).then(Modifier.background(Color.Transparent, RoundedCornerShape(4.dp))),
-                        color       = if (progress > 0.8f) Color(0xFFDC2626) else Blue600,
-                        trackColor  = DividerCol,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text("$scansToday of $dailyLimit scans used today", fontSize = 11.sp, color = TextMuted)
                 }
             }
 
@@ -201,25 +224,23 @@ fun MyPlanScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            if (!isPaid) {
-                Button(
-                    onClick  = onViewPaidPlansClick,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape    = RoundedCornerShape(14.dp),
-                    colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
-                ) {
-                    Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("View Paid Plans", fontWeight = FontWeight.SemiBold)
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Upgrading increases scan limits and unlocks more features.",
-                    fontSize = 12.sp,
-                    color    = TextMuted
-                )
-                Spacer(Modifier.height(10.dp))
+            Button(
+                onClick  = onViewPaidPlansClick,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape    = RoundedCornerShape(14.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
+            ) {
+                Icon(Icons.Default.SwapHoriz, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Change Plan", fontWeight = FontWeight.SemiBold)
             }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Switch between Free, Standard, and Premium at any time.",
+                fontSize = 12.sp,
+                color    = TextMuted
+            )
+            Spacer(Modifier.height(10.dp))
 
             OutlinedButton(
                 onClick  = onBack,

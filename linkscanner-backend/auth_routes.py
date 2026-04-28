@@ -9,19 +9,23 @@ from auth import logout_user
 from supabase import create_client
 
 # ── Email config ──────────────────────────────────────────────────────────────
-DEVELOPER_EMAIL = os.environ.get("DEVELOPER_EMAIL", "tharlynnhtet24@gmail.com")
+# Add as many developer emails as you need — all will receive the approval request
+DEVELOPER_EMAILS = [
+    "tharlynnhtet24@gmail.com",       # Mickey
+    "tanishqa@gmail.com",             # Teammate 1 — replace with real email
+    # "another@gmail.com",            # add more here
+]
+DEVELOPER_EMAIL = DEVELOPER_EMAILS[0]  # kept for backward-compat log messages
 SMTP_HOST       = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT       = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER       = os.environ.get("SMTP_USER", "tharlynnhtet24@gmail.com")
 SMTP_PASS       = os.environ.get("SMTP_PASS", "dialdwvqotehzjiu")
-SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "http://192.168.68.51:8000")
-
-EDGE_FUNCTION_URL = "https://gcpqarrvkcizefszmyxi.supabase.co/functions/v1/approve"
+SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "http://192.168.68.56:8000")
 
 def send_approval_email(user_id: str, name: str, email: str, role: str):
-    # Edge function — always online, no local server needed
-    approve_url = f"{EDGE_FUNCTION_URL}?user_id={user_id}&action=approve"
-    reject_url  = f"{EDGE_FUNCTION_URL}?user_id={user_id}&action=reject"
+    # Points to the FastAPI /approve endpoint — served with correct Content-Type
+    approve_url = f"{SERVER_BASE_URL}/approve?user_id={user_id}&action=approve"
+    reject_url  = f"{SERVER_BASE_URL}/approve?user_id={user_id}&action=reject"
     role_label  = role.replace("_", " ").title()
 
     html_body = f"""<!DOCTYPE html>
@@ -98,14 +102,14 @@ def send_approval_email(user_id: str, name: str, email: str, role: str):
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"[LinkScanner] New {role_label} signup - {name}"
         msg["From"]    = SMTP_USER
-        msg["To"]      = DEVELOPER_EMAIL
+        msg["To"]      = ", ".join(DEVELOPER_EMAILS)
         msg.attach(MIMEText(plain_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body,  "html",  "utf-8"))
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg)
-        print(f"[EMAIL] Approval email sent to {DEVELOPER_EMAIL} for {name} ({email})")
+            server.sendmail(SMTP_USER, DEVELOPER_EMAILS, msg.as_string())
+        print(f"[EMAIL] Approval email sent to {DEVELOPER_EMAILS} for {name} ({email})")
     except Exception as e:
         print(f"[EMAIL ERROR] Failed to send approval email: {e}")
         raise  # re-raise so signup endpoint can report it

@@ -218,7 +218,7 @@ fun LoginScreen(
                 ) { Text(text = "🔗", fontSize = 36.sp) }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("LinkScanner", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = blue)
+                Text("Weblink Scanner", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = blue)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text("Scan links. Stay safe.", fontSize = 15.sp, color = textMuted)
                 Spacer(modifier = Modifier.height(40.dp))

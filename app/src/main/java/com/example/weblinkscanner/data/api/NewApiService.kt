@@ -129,6 +129,26 @@ interface NewApiService {
         @Header("Authorization") token: String
     ): Response<List<@JvmSuppressWildcards Map<String, String>>>
 
+    // ── USER SUPPORT ──────────────────────────────────────────────────────────
+    @POST("platform/support/submit")
+    suspend fun submitSupportRequest(
+        @Header("Authorization") token: String,
+        @Body request: CreateSupportRequest
+    ): Response<Map<String, String>>
+
+    @GET("platform/support/my/{userId}")
+    suspend fun getMySupportRequests(
+        @Header("Authorization") token: String,
+        @Path("userId") userId: String
+    ): Response<UserSupportListResponse>
+
+    @POST("platform/support/{requestId}/user-reply")
+    suspend fun userReplySupport(
+        @Header("Authorization") token: String,
+        @Path("requestId") requestId: String,
+        @Body request: Map<String, String>
+    ): Response<Map<String, String>>
+
     // ── SCAN HISTORY ──────────────────────────────────────────────────────────
     @POST("scan/history/delete")
     suspend fun deleteHistoryItems(

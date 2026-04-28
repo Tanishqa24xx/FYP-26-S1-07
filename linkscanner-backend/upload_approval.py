@@ -30,13 +30,22 @@ except HTTPError as e:
     else:
         print(f"  Bucket note ({e.code}): {msg}")
 
-# ── 2. Upload file ────────────────────────────────────────────────────────────
+# ── 2. Delete existing file (so Content-Type metadata is reset on re-upload) ──
+print("Deleting old file (if any)...")
+try:
+    urlopen(Request(f"{BASE}/object/approval/approve.html",
+                    method="DELETE", headers=AUTH))
+    print("  Old file deleted.")
+except HTTPError as e:
+    print(f"  Delete skipped ({e.code}) — continuing.")
+
+# ── 3. Upload file fresh with correct Content-Type ────────────────────────────
 print("Uploading approve_page.html...")
 upload_h = {**AUTH, "Content-Type": "text/html; charset=utf-8", "x-upsert": "true"}
 try:
     urlopen(Request(f"{BASE}/object/approval/approve.html",
                     data=content, method="POST", headers=upload_h))
-    print(f"\n✅ Done! Approval page is live at:\n   {PUBLIC_URL}\n")
+    print(f"\nDone! Approval page is live at:\n   {PUBLIC_URL}\n")
 except HTTPError as e:
     err = e.read().decode()
-    print(f"\n❌ Upload failed ({e.code}): {err}\n")
+    print(f"\nUpload failed ({e.code}): {err}\n")

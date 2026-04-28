@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.weblinkscanner.data.models.RescanResponse
 import com.example.weblinkscanner.data.models.SavedLinkItem
 import com.example.weblinkscanner.data.repository.Result
 import com.example.weblinkscanner.data.repository.WeblinkScannerRepository
@@ -28,12 +29,12 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val Blue600     = Color(0xFF2563EB)
-private val Blue50      = Color(0xFFEFF6FF)
-private val Blue100     = Color(0xFFDBEAFE)
-private val PageBgTop   = Color(0xFFEFF6FF)
-private val PageBgBot   = Color(0xFFF8FAFC)
-private val CardBg      = Color.White
+private val Blue600   = Color(0xFF2563EB)
+private val Blue50    = Color(0xFFEFF6FF)
+private val Blue100   = Color(0xFFDBEAFE)
+private val PageBgTop = Color(0xFFEFF6FF)
+private val PageBgBot = Color(0xFFF8FAFC)
+private val CardBg    = Color.White
 private val TextPrimary = Color(0xFF0F172A)
 private val TextMuted   = Color(0xFF64748B)
 private val DividerCol  = Color(0xFFE2E8F0)
@@ -56,25 +57,29 @@ private fun formatDate(raw: String?): String {
 
 @Composable
 fun SavedLinksScreen(
-    repository:    WeblinkScannerRepository,
+    repository: WeblinkScannerRepository,
     scanViewModel: ScanViewModel,
-    userId:        String,
-    onBack:        () -> Unit = {}
+    userId: String,
+    onBack: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
 
-    var links         by remember { mutableStateOf<List<SavedLinkItem>>(emptyList()) }
-    var isLoading     by remember { mutableStateOf(true) }
-    var errorMsg      by remember { mutableStateOf<String?>(null) }
-    var selectedIds   by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var isRescanning  by remember { mutableStateOf(false) }
-    var rescanStatus  by remember { mutableStateOf<String?>(null) }
-    var showRemoveDlg by remember { mutableStateOf(false) }
+    var links          by remember { mutableStateOf<List<SavedLinkItem>>(emptyList()) }
+    var isLoading      by remember { mutableStateOf(true) }
+    var errorMsg       by remember { mutableStateOf<String?>(null) }
+    var selectedIds    by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var isRescanning   by remember { mutableStateOf(false) }
+    var rescanStatus   by remember { mutableStateOf<String?>(null) }
+    var rescanIsError  by remember { mutableStateOf(false) }
+    var showRemoveDlg  by remember { mutableStateOf(false) }
+    var showQuotaDlg   by remember { mutableStateOf(false) }
+    var quotaDlgMsg    by remember { mutableStateOf("") }
+    // Store pending rescan params for when user confirms quota dialog
+    var pendingForceIds by remember { mutableStateOf<List<String>>(emptyList()) }
 
     fun loadLinks() {
         scope.launch {
-            isLoading = true
-            errorMsg  = null
+            isLoading = true; errorMsg = null
             when (val r = repository.getSavedLinks(userId)) {
                 is Result.Success -> links = r.data.links
                 is Result.Error   -> errorMsg = "Could not load saved links."
@@ -83,9 +88,36 @@ fun SavedLinksScreen(
         }
     }
 
+    fun doRescan(ids: List<String>, force: Boolean) {
+        isRescanning = true; rescanStatus = null; rescanIsError = false
+        scope.launch {
+            when (val r = repository.rescanSavedLinks(userId, force = force, selectedIds = ids)) {
+                is Result.Success -> {
+                    val resp = r.data
+                    if (resp.quotaWarning) {
+                        // Show warning dialog — don't mark as rescanning
+                        quotaDlgMsg    = resp.message
+                        pendingForceIds = ids
+                        showQuotaDlg   = true
+                        isRescanning   = false
+                        return@launch
+                    }
+                    rescanStatus  = resp.message
+                    rescanIsError = false
+                }
+                is Result.Error -> {
+                    rescanStatus  = "Rescan failed: ${r.message}"
+                    rescanIsError = true
+                }
+            }
+            loadLinks()
+            isRescanning = false
+        }
+    }
+
     LaunchedEffect(userId) { loadLinks() }
 
-    // Remove selected dialog
+    // --- Dialogs ---
     if (showRemoveDlg) {
         AlertDialog(
             onDismissRequest = { showRemoveDlg = false },
@@ -99,9 +131,7 @@ fun SavedLinksScreen(
                         loadLinks()
                     }
                     showRemoveDlg = false
-                }) {
-                    Text("Remove", color = RedDanger, fontWeight = FontWeight.Bold)
-                }
+                }) { Text("Remove", color = RedDanger, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
                 TextButton(onClick = { showRemoveDlg = false }) { Text("Cancel", color = TextMuted) }
@@ -109,6 +139,24 @@ fun SavedLinksScreen(
         )
     }
 
+    if (showQuotaDlg) {
+        AlertDialog(
+            onDismissRequest = { showQuotaDlg = false },
+            title = { Text("Scan Quota Warning", fontWeight = FontWeight.Bold) },
+            text  = { Text(quotaDlgMsg, color = TextMuted) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showQuotaDlg = false
+                    doRescan(pendingForceIds, force = true)
+                }) { Text("Proceed Anyway", color = Blue600, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showQuotaDlg = false }) { Text("Cancel", color = TextMuted) }
+            }
+        )
+    }
+
+    // --- Layout ---
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -123,48 +171,50 @@ fun SavedLinksScreen(
         ) {
             Spacer(Modifier.height(52.dp))
 
-            // Header
             Box(
                 modifier = Modifier
                     .size(64.dp)
                     .background(Brush.radialGradient(listOf(Blue100, Blue50)), RoundedCornerShape(18.dp)),
                 contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Bookmark, null, tint = Blue600, modifier = Modifier.size(32.dp))
-            }
+            ) { Icon(Icons.Default.Bookmark, null, tint = Blue600, modifier = Modifier.size(32.dp)) }
 
             Spacer(Modifier.height(12.dp))
             Text("Saved Links", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Blue600)
             Text(
                 "Saved links can be re-checked to see if the risk level changed.",
-                fontSize  = 13.sp,
-                color     = TextMuted,
-                modifier  = Modifier.padding(horizontal = 8.dp),
+                fontSize = 13.sp, color = TextMuted,
+                modifier = Modifier.padding(horizontal = 8.dp),
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(24.dp))
 
-            // Rescan status message
-            rescanStatus?.let {
+            // Rescan status banner
+            rescanStatus?.let { status ->
                 Card(
                     modifier  = Modifier.fillMaxWidth(),
                     shape     = RoundedCornerShape(12.dp),
-                    colors    = CardDefaults.cardColors(containerColor = GreenBg),
+                    colors    = CardDefaults.cardColors(containerColor = if (rescanIsError) RedBg else GreenBg),
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.CheckCircle, null, tint = GreenSafe, modifier = Modifier.size(16.dp))
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (rescanIsError) Icons.Default.Error else Icons.Default.CheckCircle,
+                            null,
+                            tint = if (rescanIsError) RedDanger else GreenSafe,
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(Modifier.width(8.dp))
-                        Text(it, fontSize = 13.sp, color = GreenSafe, fontWeight = FontWeight.Medium)
+                        Text(
+                            status, fontSize = 13.sp,
+                            color = if (rescanIsError) RedDanger else GreenSafe,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
                 Spacer(Modifier.height(12.dp))
             }
 
-            // Saved Links List card
+            // Links list card
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -172,42 +222,39 @@ fun SavedLinksScreen(
                 elevation = CardDefaults.cardElevation(3.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        "Saved Links List",
-                        fontSize   = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color      = TextPrimary
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Saved Links List", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                        if (selectedIds.isNotEmpty()) {
+                            Text(
+                                "${selectedIds.size} selected",
+                                fontSize = 12.sp, color = Blue600, fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                     Spacer(Modifier.height(12.dp))
 
                     when {
                         isLoading -> Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) {
                             CircularProgressIndicator(color = Blue600)
                         }
-
-                        errorMsg != null -> Text(
-                            errorMsg!!, color = RedDanger, fontSize = 13.sp,
-                            modifier = Modifier.padding(8.dp)
-                        )
-
+                        errorMsg != null -> Text(errorMsg!!, color = RedDanger, fontSize = 13.sp, modifier = Modifier.padding(8.dp))
                         links.isEmpty() -> Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) {
                             Text(
                                 "No saved links yet.\nSave a link after scanning to see it here.",
-                                color    = TextMuted,
-                                fontSize = 14.sp,
-                                textAlign = TextAlign.Center
+                                color = TextMuted, fontSize = 14.sp, textAlign = TextAlign.Center
                             )
                         }
-
                         else -> links.forEachIndexed { index, link ->
                             SavedLinkRow(
                                 link       = link,
                                 isSelected = link.id in selectedIds,
                                 onToggle   = {
                                     selectedIds = if (link.id in selectedIds)
-                                        selectedIds - link.id
-                                    else
-                                        selectedIds + link.id
+                                        selectedIds - link.id else selectedIds + link.id
                                 }
                             )
                             if (index < links.lastIndex)
@@ -219,18 +266,9 @@ fun SavedLinksScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // Re-check All button — just refreshes from DB, does NOT consume scan quota
+            // Re-check All
             Button(
-                onClick  = {
-                    if (isRescanning) return@Button
-                    isRescanning  = true
-                    rescanStatus  = null
-                    scope.launch {
-                        loadLinks()
-                        rescanStatus = "Links refreshed successfully."
-                        isRescanning = false
-                    }
-                },
+                onClick  = { if (!isRescanning) doRescan(emptyList(), force = false) },
                 enabled  = links.isNotEmpty() && !isRescanning,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape    = RoundedCornerShape(14.dp),
@@ -240,11 +278,7 @@ fun SavedLinksScreen(
                 )
             ) {
                 if (isRescanning) {
-                    CircularProgressIndicator(
-                        modifier    = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                        color       = Color.White
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
                     Spacer(Modifier.width(8.dp))
                     Text("Re-checking...", fontWeight = FontWeight.Bold)
                 } else {
@@ -256,7 +290,32 @@ fun SavedLinksScreen(
 
             Spacer(Modifier.height(10.dp))
 
-            // Remove Selected button
+            // Re-check Selected
+            OutlinedButton(
+                onClick  = { if (!isRescanning) doRescan(selectedIds.toList(), force = false) },
+                enabled  = selectedIds.isNotEmpty() && !isRescanning,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape    = RoundedCornerShape(14.dp),
+                border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
+                colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
+            ) {
+                Icon(
+                    Icons.Default.Refresh, null,
+                    tint = if (selectedIds.isNotEmpty()) Blue600 else TextMuted,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (selectedIds.isEmpty()) "Re-check Selected"
+                    else "Re-check Selected (${selectedIds.size})",
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (selectedIds.isNotEmpty()) Blue600 else TextMuted
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Remove Selected
             OutlinedButton(
                 onClick  = { showRemoveDlg = true },
                 enabled  = selectedIds.isNotEmpty(),
@@ -267,7 +326,7 @@ fun SavedLinksScreen(
             ) {
                 Icon(
                     Icons.Default.Delete, null,
-                    tint     = if (selectedIds.isNotEmpty()) RedDanger else TextMuted,
+                    tint = if (selectedIds.isNotEmpty()) RedDanger else TextMuted,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(8.dp))
@@ -275,7 +334,7 @@ fun SavedLinksScreen(
                     if (selectedIds.isEmpty()) "Remove Selected"
                     else "Remove Selected (${selectedIds.size})",
                     fontWeight = FontWeight.SemiBold,
-                    color      = if (selectedIds.isNotEmpty()) RedDanger else TextMuted
+                    color = if (selectedIds.isNotEmpty()) RedDanger else TextMuted
                 )
             }
 
@@ -287,9 +346,7 @@ fun SavedLinksScreen(
                 shape    = RoundedCornerShape(14.dp),
                 border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
                 colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
-            ) {
-                Text("Back", fontWeight = FontWeight.SemiBold, color = Blue600)
-            }
+            ) { Text("Back", fontWeight = FontWeight.SemiBold, color = Blue600) }
 
             Spacer(Modifier.height(32.dp))
         }
@@ -297,16 +354,13 @@ fun SavedLinksScreen(
 }
 
 @Composable
-private fun SavedLinkRow(
-    link: SavedLinkItem, isSelected: Boolean, onToggle: () -> Unit
-) {
+private fun SavedLinkRow(link: SavedLinkItem, isSelected: Boolean, onToggle: () -> Unit) {
     val (badgeColor, badgeBg) = when (link.riskLevel?.uppercase()) {
         "SAFE"       -> Pair(GreenSafe, GreenBg)
         "SUSPICIOUS" -> Pair(AmberWarn, AmberBg)
         "DANGEROUS"  -> Pair(RedDanger, RedBg)
         else         -> Pair(TextMuted,  Blue50)
     }
-
     Row(
         modifier          = Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -322,7 +376,6 @@ private fun SavedLinkRow(
             )
             Spacer(Modifier.height(3.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Risk badge
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))

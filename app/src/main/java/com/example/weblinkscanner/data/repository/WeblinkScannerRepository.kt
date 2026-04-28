@@ -95,6 +95,16 @@ class WeblinkScannerRepository(private val session: SessionStore) {
     suspend fun updateProfile(userId: String, name: String, email: String): Result<Map<String, String>> =
         safeCall { api.updateProfile(bearer(), UpdateProfileRequest(userId, name, email)) }
 
+    // --- User Support ---
+    suspend fun submitSupportRequest(userId: String, email: String, subject: String, message: String): Result<Map<String, String>> =
+        safeCall { api.submitSupportRequest(bearer(), CreateSupportRequest(userId, email, subject, message)) }
+
+    suspend fun getMySupportRequests(userId: String): Result<UserSupportListResponse> =
+        safeCall { api.getMySupportRequests(bearer(), userId) }
+
+    suspend fun userReplySupport(requestId: String, message: String, email: String): Result<Map<String, String>> =
+        safeCall { api.userReplySupport(bearer(), requestId, mapOf("message" to message, "sender_email" to email)) }
+
     // --- Generic safe call ---
     private suspend fun <T> safeCall(call: suspend () -> Response<T>): Result<T> =
         withContext(Dispatchers.IO) {

@@ -68,8 +68,8 @@ data class PMReportResponse(
 
 data class PMSupportRequest(
     val id: String,
-    @SerializedName("user_id")    val userId: String?,
-    @SerializedName("user_email") val userEmail: String?,
+    @SerializedName("user_id") val userId: String?,
+    @SerializedName("email")   val userEmail: String?,
     val subject: String,
     val message: String,
     val status: String,
