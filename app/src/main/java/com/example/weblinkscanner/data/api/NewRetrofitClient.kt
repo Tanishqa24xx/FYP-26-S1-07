@@ -8,7 +8,9 @@ import java.util.concurrent.TimeUnit
 
 object NewRetrofitClient {
 
-    private const val BASE_URL = "http://10.0.2.2:8000/"
+    // Use your local IP for device testing, or your Render URL when deployed
+    // e.g. "https://your-app.onrender.com/" for production
+    private const val BASE_URL = "http://192.168.68.56:8000/"
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

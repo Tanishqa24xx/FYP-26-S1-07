@@ -117,12 +117,20 @@ def save_scan(user_id: str, url: str, result: dict, source: str) -> str:
 @router.post("/url", response_model=ScanResponse)
 async def scan_url(body: ScanRequest):
     user_id = body.user_id or "00000000-0000-0000-0000-000000000000"
+
+    # Validate URL
+    url = body.url.strip() if body.url else ""
+    if not url:
+        raise HTTPException(status_code=400, detail="URL cannot be empty.")
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url   # auto-prepend https if missing
+
     remaining, plan = check_quota_and_get_plan(user_id)
-    result = await perform_scan(body.url)
-    scan_id = save_scan(user_id, body.url, result, "manual")
+    result = await perform_scan(url)
+    scan_id = save_scan(user_id, url, result, "manual")
     return ScanResponse(
         scan_id = scan_id,
-        url = body.url,
+        url = url,
         scanned_at = datetime.now(timezone.utc),
         verdict = result["verdict"],
         risk_score = result["risk_score"],

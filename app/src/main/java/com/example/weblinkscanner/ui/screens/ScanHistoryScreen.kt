@@ -357,7 +357,7 @@ fun ScanHistoryScreen(
                 val isPremium = userPlan.lowercase() == "premium"
                 var showExportMenu by remember { mutableStateOf(false) }
                 val context = androidx.compose.ui.platform.LocalContext.current
-                val baseUrl = "http://10.0.2.2:8000/scan/export"
+                val baseUrl = "http://192.168.68.56:8000/scan/export"
 
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedButton(
