@@ -89,16 +89,16 @@ def _wrap(header_sub: str, inner_html: str) -> HTMLResponse:
         '<meta charset="UTF-8"/>'
         '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>'
         '<meta name="viewport" content="width=device-width, initial-scale=1.0"/>'
-        f"<title>WebLinkScanner - {header_sub}</title>"
+        f"<title>Weblink Scanner - {header_sub}</title>"
         f"<style>{_CSS}</style>"
         "</head>"
         "<body><div class='card'>"
         "<div class='header'>"
-        "<div class='logo'>&#128279; WebLinkScanner</div>"
+        "<div class='logo'>&#128279; Weblink Scanner</div>"
         f"<div class='sub'>{header_sub}</div>"
         "</div>"
         f"{inner_html}"
-        "<div class='footer'>WebLinkScanner Admin Panel</div>"
+        "<div class='footer'>Weblink Scanner Admin Panel</div>"
         "</div></body></html>"
     )
     return HTMLResponse(content=html, media_type="text/html; charset=utf-8")
@@ -169,7 +169,7 @@ def handle_approval(user_id: str, action: str = ""):
     if action == "approve":
         return _result("&#x2705;", "Account Approved", "Approved", "#16a34a",
                        f"<b>{name}</b> ({email}) has been approved as <b>{role}</b>.<br><br>"
-                       f"They can now log in to WebLinkScanner.")
+                       f"They can now log in to Weblink Scanner.")
     else:
         return _result("&#x274C;", "Account Rejected", "Rejected", "#dc2626",
                        f"<b>{name}</b> ({email}) has been rejected.<br><br>"

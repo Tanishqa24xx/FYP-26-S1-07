@@ -338,7 +338,7 @@ def export_scan_history(
             elements = []
 
             # Title
-            elements.append(Paragraph("WeblinkScanner — Scan History Report", styles["Title"]))
+            elements.append(Paragraph("Weblink Scanner — Scan History Report", styles["Title"]))
             elements.append(Paragraph(
                 f"User: {user_id}   |   Generated: {now.strftime('%Y-%m-%d %H:%M UTC')}   |   Plan: {plan.capitalize()}",
                 styles["Normal"]

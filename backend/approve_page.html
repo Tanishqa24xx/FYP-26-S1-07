@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WebLinkScanner - Account Approval</title>
+  <title>Weblink Scanner - Account Approval</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -89,13 +89,13 @@
 <body>
 <div class="card">
   <div class="header">
-    <div class="logo">&#128279; WebLinkScanner</div>
+    <div class="logo">&#128279; Weblink Scanner</div>
     <div class="sub" id="header-sub">Admin Approval Required</div>
   </div>
   <div id="content">
     <div class="result"><div class="spinner"></div><p>Loading...</p></div>
   </div>
-  <div class="footer">WebLinkScanner Admin Panel</div>
+  <div class="footer">Weblink Scanner Admin Panel</div>
 </div>
 
 <script>
@@ -140,7 +140,7 @@
     }
     if (action === "approve") {
       showResult("✅", "Account Approved", "Approved", "#16a34a",
-        "<b>" + name + "</b> (" + email + ") has been approved as <b>" + role + "</b>.<br><br>They can now log in to WebLinkScanner.");
+        "<b>" + name + "</b> (" + email + ") has been approved as <b>" + role + "</b>.<br><br>They can now log in to Weblink Scanner.");
     } else {
       showResult("❌", "Account Rejected", "Rejected", "#dc2626",
         "<b>" + name + "</b> (" + email + ") has been rejected.<br><br>They will see a rejection message when they attempt to log in.");

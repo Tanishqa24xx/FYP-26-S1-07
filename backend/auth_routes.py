@@ -37,7 +37,7 @@ def send_approval_email(user_id: str, name: str, email: str, role: str):
       <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);overflow:hidden;">
         <tr>
           <td style="background:#1d4ed8;padding:28px 32px;text-align:center;">
-            <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">🔗 WebLinkScanner</p>
+            <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">🔗 Weblink Scanner</p>
             <p style="margin:6px 0 0;font-size:14px;color:#bfdbfe;">Admin Approval Required</p>
           </td>
         </tr>
@@ -70,7 +70,7 @@ def send_approval_email(user_id: str, name: str, email: str, role: str):
         </tr>
         <tr>
           <td style="padding:16px 32px;border-top:1px solid #e2e8f0;text-align:center;font-size:12px;color:#94a3b8;">
-            WebLinkScanner Admin Panel
+            Weblink Scanner Admin Panel
           </td>
         </tr>
       </table>
@@ -80,7 +80,7 @@ def send_approval_email(user_id: str, name: str, email: str, role: str):
 </html>"""
 
     plain_body = (
-        f"New {role_label} signup request on WebLinkScanner:\n\n"
+        f"New {role_label} signup request on Weblink Scanner:\n\n"
         f"Name:  {name}\n"
         f"Email: {email}\n"
         f"Role:  {role_label}\n\n"
@@ -90,7 +90,7 @@ def send_approval_email(user_id: str, name: str, email: str, role: str):
     )
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"[WebLinkScanner] New {role_label} signup - {name}"
+        msg["Subject"] = f"[Weblink Scanner] New {role_label} signup - {name}"
         msg["From"]    = SMTP_USER
         msg["To"]      = ", ".join(DEVELOPER_EMAILS)
         msg.attach(MIMEText(plain_body, "plain", "utf-8"))

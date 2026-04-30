@@ -267,7 +267,7 @@ fun SignUpScreen(
 
             // Header
             Text(
-                text = "🔗 LinkScanner",
+                text = "🔗 Weblink Scanner",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 color = blueAccent

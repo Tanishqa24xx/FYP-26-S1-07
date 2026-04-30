@@ -18,9 +18,6 @@ class Settings:
     # --- Supabase: service role (admin, account deletion only)
     SUPABASE_SERVICE_KEY: str = os.getenv("SUPABASE_SERVICE_KEY", "")
 
-    # --- PhishTank ---
-    PHISHTANK_API_KEY: str = os.getenv("PHISHTANK_API_KEY", "")
-
     # --- URLhaus ---
     URLHAUS_API_KEY: str = os.getenv("URLHAUS_API_KEY", "")
 
