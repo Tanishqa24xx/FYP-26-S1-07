@@ -1,0 +1,31 @@
+
+# .gitignore — backend (Python / FastAPI)
+
+
+# .env holds all real API keys and must never be committed
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Backup files created during development (e.g. scan_service.py.bak)
+*.bak
+*.orig
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editor folders
+.vscode/
+.idea/
+
+# Playwright browser binaries (large, re-downloaded by `playwright install`)
+playwright/

@@ -160,7 +160,7 @@ fun AutoLogoutScreen(userId: String = "default", onBack: () -> Unit = {}) {
                     )
                     Spacer(Modifier.height(6.dp))
                     Text("• You return to Log in screen", fontSize = 13.sp, color = TextMuted)
-                    Text("• Unsaved inputs are cleared",  fontSize = 13.sp, color = TextMuted)
+                    Text("• Unsaved inputs are cleared", fontSize = 13.sp, color = TextMuted)
                 }
             }
 

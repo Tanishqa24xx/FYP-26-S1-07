@@ -45,20 +45,20 @@ private val RedBg       = Color(0xFFFEE2E2)
 
 @Composable
 fun ScanUrlScreen(
-    scanViewModel:  ScanViewModel,
-    planViewModel:  PlanViewModel,
-    userId:         String = "00000000-0000-0000-0000-000000000000",
+    scanViewModel: ScanViewModel,
+    planViewModel: PlanViewModel,
+    userId: String = "00000000-0000-0000-0000-000000000000",
     onScanComplete: () -> Unit,
-    onCameraClick:  () -> Unit,
-    onQrClick:      () -> Unit,
-    onBack:         () -> Unit
+    onCameraClick: () -> Unit,
+    onQrClick: () -> Unit,
+    onBack: () -> Unit
 ) {
-    var urlInput  by remember { mutableStateOf("") }
+    var urlInput by remember { mutableStateOf("") }
 
-    val isLoading    by scanViewModel.isLoading.collectAsState()
+    val isLoading by scanViewModel.isLoading.collectAsState()
     val errorMessage by scanViewModel.errorMessage.collectAsState()
-    val myPlan       by planViewModel.myPlan.collectAsState()
-    val recentScans  = scanViewModel.recentScans
+    val myPlan by planViewModel.myPlan.collectAsState()
+    val recentScans = scanViewModel.recentScans
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -73,10 +73,12 @@ fun ScanUrlScreen(
     val scansToday = myPlan?.scansToday ?: 0
     val remaining  = (dailyLimit - scansToday).coerceAtLeast(0)
 
+    val isFree       = planName.uppercase() == "FREE"
+    val limitReached = isFree && remaining == 0
+
     fun doScan() {
-        if (urlInput.isBlank() || isLoading) return
+        if (urlInput.isBlank() || isLoading || limitReached) return
         keyboardController?.hide()
-        // Navigate immediately after firing — do NOT wait for result here
         scanViewModel.scanUrl(urlInput.trim(), userId)
         onScanComplete()
     }
@@ -109,36 +111,65 @@ fun ScanUrlScreen(
             Text("Check if a link is safe", fontSize = 14.sp, color = TextMuted)
             Spacer(Modifier.height(20.dp))
 
-            // ── Plan quota bar ────────────────────────────────────────────────
-            Card(
-                modifier  = Modifier.fillMaxWidth(),
-                shape     = RoundedCornerShape(14.dp),
-                colors    = CardDefaults.cardColors(containerColor = Blue50),
-                elevation = CardDefaults.cardElevation(0.dp),
-                border    = BorderStroke(1.dp, Blue100)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+            // --- Plan quota bar — Free plan only ---
+            // Paid plans (Standard/Premium) see nothing here — no badge, no bar.
+            if (isFree && limitReached) {
+                Card(
+                    modifier  = Modifier.fillMaxWidth(),
+                    shape     = RoundedCornerShape(14.dp),
+                    colors    = CardDefaults.cardColors(containerColor = RedBg),
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    border    = BorderStroke(1.dp, RedDanger.copy(alpha = 0.3f))
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Shield, null, tint = Blue600, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("$planName Plan  •  $dailyLimit scans/day",
-                            fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Blue600)
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Block, null, tint = RedDanger,
+                                modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Daily scan limit reached",
+                                fontSize = 14.sp, fontWeight = FontWeight.Bold, color = RedDanger)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "You have used all $dailyLimit free scans for today. " +
+                                    "Scans reset daily. Upgrade to Standard or Premium for unlimited scans.",
+                            fontSize = 12.sp, color = RedDanger.copy(alpha = 0.85f),
+                            lineHeight = 18.sp
+                        )
                     }
-                    Surface(shape = RoundedCornerShape(8.dp), color = Blue100) {
-                        Text("Remaining: $remaining",
-                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Blue600,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                }
+            } else if (isFree) {
+                Card(
+                    modifier  = Modifier.fillMaxWidth(),
+                    shape     = RoundedCornerShape(14.dp),
+                    colors    = CardDefaults.cardColors(containerColor = Blue50),
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    border    = BorderStroke(1.dp, Blue100)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Shield, null, tint = Blue600,
+                                modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("$planName Plan  •  $dailyLimit scans/day",
+                                fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Blue600)
+                        }
+                        Surface(shape = RoundedCornerShape(8.dp), color = Blue100) {
+                            Text("Remaining: $remaining",
+                                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Blue600,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                        }
                     }
                 }
             }
 
             Spacer(Modifier.height(14.dp))
 
-            // ── URL input ─────────────────────────────────────────────────────
+            // --- URL input ---
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -175,10 +206,13 @@ fun ScanUrlScreen(
                     Spacer(Modifier.height(14.dp))
                     Button(
                         onClick  = { doScan() },
-                        enabled  = urlInput.isNotBlank() && !isLoading,
+                        enabled  = urlInput.isNotBlank() && !isLoading && !limitReached,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape    = RoundedCornerShape(12.dp),
-                        colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
+                        colors   = ButtonDefaults.buttonColors(
+                            containerColor         = if (limitReached) DividerCol else Blue600,
+                            disabledContainerColor = DividerCol
+                        )
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.5.dp)
@@ -195,35 +229,49 @@ fun ScanUrlScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Camera / QR ───────────────────────────────────────────────────
+            // --- Camera / QR ---
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
-                    onClick  = onCameraClick,
+                    onClick  = { if (!limitReached) onCameraClick() },
+                    enabled  = !limitReached,
                     modifier = Modifier.weight(1f).height(52.dp),
                     shape    = RoundedCornerShape(12.dp),
                     border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
-                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
+                    colors   = ButtonDefaults.outlinedButtonColors(
+                        contentColor         = if (limitReached) TextMuted else Blue600,
+                        disabledContentColor = TextMuted
+                    )
                 ) {
-                    Icon(Icons.Default.CameraAlt, null, tint = Blue600, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.CameraAlt, null,
+                        tint = if (limitReached) TextMuted else Blue600,
+                        modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Camera", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Blue600)
+                    Text("Camera", fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                        color = if (limitReached) TextMuted else Blue600)
                 }
                 OutlinedButton(
-                    onClick  = onQrClick,
+                    onClick  = { if (!limitReached) onQrClick() },
+                    enabled  = !limitReached,
                     modifier = Modifier.weight(1f).height(52.dp),
                     shape    = RoundedCornerShape(12.dp),
                     border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
-                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
+                    colors   = ButtonDefaults.outlinedButtonColors(
+                        contentColor         = if (limitReached) TextMuted else Blue600,
+                        disabledContentColor = TextMuted
+                    )
                 ) {
-                    Icon(Icons.Default.QrCodeScanner, null, tint = Blue600, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.QrCodeScanner, null,
+                        tint = if (limitReached) TextMuted else Blue600,
+                        modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Scan QR", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Blue600)
+                    Text("Scan QR", fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                        color = if (limitReached) TextMuted else Blue600)
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // ── Recent scans ──────────────────────────────────────────────────
+            // --- Recent scans ---
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -238,7 +286,7 @@ fun ScanUrlScreen(
                     }
                     Spacer(Modifier.height(10.dp))
                     if (recentScans.isEmpty()) {
-                        Text("No scans yet — scan a link to see results here.",
+                        Text("No scans yet - scan a link to see results here.",
                             fontSize = 13.sp, color = TextMuted,
                             modifier = Modifier.padding(vertical = 8.dp))
                     } else {

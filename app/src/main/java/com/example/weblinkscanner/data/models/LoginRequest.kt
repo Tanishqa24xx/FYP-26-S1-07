@@ -2,6 +2,5 @@ package com.example.weblinkscanner.data.models
 
 data class LoginRequest(
     val email: String,
-    val password: String,
-    val role: String = "user"
+    val password: String
 )

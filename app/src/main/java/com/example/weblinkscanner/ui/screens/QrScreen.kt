@@ -50,20 +50,20 @@ private val RedFail     = Color(0xFFDC2626)
 
 @Composable
 fun QrScreen(
-    viewModel:      ScanViewModel,
-    userId:         String = "00000000-0000-0000-0000-000000000000",
+    viewModel: ScanViewModel,
+    userId: String = "00000000-0000-0000-0000-000000000000",
     onScanComplete: () -> Unit,
-    onBack:         () -> Unit
+    onBack: () -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var extractedUrl by remember { mutableStateOf("") }
-    var isScanning   by remember { mutableStateOf(true) }
-    var detected     by remember { mutableStateOf(false) }
+    var isScanning by remember { mutableStateOf(true) }
+    var detected by remember { mutableStateOf(false) }
 
-    val isLoading    by viewModel.isLoading.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    val scanResult   by viewModel.scanResult.collectAsState()
+    val scanResult by viewModel.scanResult.collectAsState()
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()

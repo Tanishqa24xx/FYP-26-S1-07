@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -53,16 +51,12 @@ class LoginActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
+    // name, email and plan are passed back so MenuScreen can display them
     onLoginSuccess: (name: String, email: String, plan: String, userId: String, token: String, role: String) -> Unit,
     onNavigateToSignUp: () -> Unit = {}
 ) {
-    val roleOptions = listOf("User", "Admin", "Platform Manager")
-    var selectedRole     by remember { mutableStateOf(roleOptions[0]) }
-    var roleDropdownOpen by remember { mutableStateOf(false) }
-
     var email        by remember { mutableStateOf("") }
     var password     by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
@@ -85,7 +79,7 @@ fun LoginScreen(
     val textMuted   = Color(0xFF64748B)
     val errorRed    = Color(0xFFDC2626)
 
-    // ── Forgot Password Dialog ────────────────────────────────────────────────
+    // --- Forgot Password Dialog ---
     if (showForgotDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -169,7 +163,7 @@ fun LoginScreen(
         )
     }
 
-    // ── Forgot Password Success Dialog ────────────────────────────────────────
+    // --- Forgot Password Success Dialog ---
     if (showForgotSuccess) {
         AlertDialog(
             onDismissRequest = { showForgotSuccess = false },
@@ -260,44 +254,6 @@ fun LoginScreen(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // ── Login As Dropdown ─────────────────────────────────────────
-                ExposedDropdownMenuBox(
-                    expanded = roleDropdownOpen,
-                    onExpandedChange = { roleDropdownOpen = it },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = selectedRole,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Login as") },
-                        leadingIcon = { Icon(Icons.Default.Person, null, tint = blue) },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleDropdownOpen)
-                        },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = blue, unfocusedBorderColor = Color(0xFFCBD5E1),
-                            focusedLabelColor = blue, focusedTextColor = textPrimary,
-                            unfocusedTextColor = textPrimary, cursorColor = blue
-                        )
-                    )
-                    ExposedDropdownMenu(
-                        expanded = roleDropdownOpen,
-                        onDismissRequest = { roleDropdownOpen = false }
-                    ) {
-                        roleOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = { selectedRole = option; roleDropdownOpen = false }
-                            )
-                        }
-                    }
-                }
-
                 Row(modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically) {
@@ -327,26 +283,14 @@ fun LoginScreen(
                             errorMsg = "Please enter your email and password"; return@Button
                         }
                         isLoading = true; errorMsg = ""
-                        val roleValue = selectedRole.lowercase().replace(" ", "_")
-                        NewRetrofitClient.api.login(LoginRequest(email.trim(), password, roleValue))
+                        NewRetrofitClient.api.login(LoginRequest(email.trim(), password))
                             .enqueue(object : Callback<LoginResponse> {
                                 override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                                     Handler(Looper.getMainLooper()).post {
                                         isLoading = false
                                         if (response.isSuccessful) {
-                                            val body         = response.body()
-                                            val token        = body?.access_token
-                                            val returnedRole = body?.role ?: "user"
-
-                                            // ── Role mismatch check ───────────────────────────────
-                                            if (returnedRole != roleValue) {
-                                                val expected = returnedRole
-                                                    .replace("_", " ")
-                                                    .replaceFirstChar { it.uppercase() }
-                                                errorMsg = "This account is registered as \"$expected\". Please select the correct role."
-                                                return@post
-                                            }
-
+                                            val body  = response.body()
+                                            val token = body?.access_token
                                             if (rememberMe && token != null) {
                                                 TokenManager.saveSession(
                                                     context = context,
@@ -355,23 +299,20 @@ fun LoginScreen(
                                                     email   = email.trim(),
                                                     plan    = body?.plan    ?: "FREE",
                                                     userId  = body?.user_id ?: "00000000-0000-0000-0000-000000000000",
-                                                    role    = returnedRole
+                                                    role    = body?.role    ?: "user"
                                                 )
                                             }
+                                            // Pass name, email, plan back to AppNavigation
                                             onLoginSuccess(
-                                                body?.name         ?: "",
+                                                body?.name        ?: "",
                                                 email.trim(),
-                                                body?.plan         ?: "FREE",
-                                                body?.user_id      ?: "00000000-0000-0000-0000-000000000000",
-                                                token              ?: "",
-                                                returnedRole
+                                                body?.plan        ?: "FREE",
+                                                body?.user_id     ?: "00000000-0000-0000-0000-000000000000",
+                                                body?.access_token ?: "",
+                                                body?.role        ?: "user"
                                             )
                                         } else {
-                                            val detail = try {
-                                                val errJson = response.errorBody()?.string()
-                                                org.json.JSONObject(errJson ?: "").optString("detail", null)
-                                            } catch (e: Exception) { null }
-                                            errorMsg = detail ?: "Invalid email or password"
+                                            errorMsg = "Invalid email or password"
                                         }
                                     }
                                 }

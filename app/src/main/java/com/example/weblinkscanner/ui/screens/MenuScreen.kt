@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.weblinkscanner.utils.TokenManager
 
-// ── Colors — identical to LoginScreen & ScannerScreen ─────────────────────────
+// --- Colors: identical to LoginScreen & ScannerScreen ---
 private val Blue600     = Color(0xFF2563EB)
 private val Blue50      = Color(0xFFEFF6FF)
 private val Blue100     = Color(0xFFDBEAFE)
@@ -74,7 +74,7 @@ fun MenuScreen(
 
             Spacer(modifier = Modifier.height(56.dp))
 
-            // ── Logo + Title ──────────────────────────────────────────────────
+            // --- Logo + Title ---
             Box(
                 modifier = Modifier
                     .size(72.dp)
@@ -104,7 +104,7 @@ fun MenuScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // ── Account Info Card ─────────────────────────────────────────────
+            // --- Account Info Card ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -117,7 +117,7 @@ fun MenuScreen(
                         .padding(horizontal = 20.dp, vertical = 18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // ── Avatar: initials if name loaded, Person icon otherwise ─
+                    // --- Avatar: initials if name loaded, Person icon otherwise ---
                     Box(
                         modifier = Modifier
                             .size(48.dp)
@@ -147,7 +147,7 @@ fun MenuScreen(
                     Spacer(modifier = Modifier.width(14.dp))
 
                     Column {
-                        // ── Name (from Supabase users table) ──────────────────
+                        // --- Name (from Supabase users table) ---
                         Text(
                             text = userName.ifBlank { userEmail.ifBlank { "User" } },
                             fontSize = 15.sp,
@@ -164,7 +164,7 @@ fun MenuScreen(
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
-                        // ── Plan badge ────────────────────────────────────────
+                        // --- Plan badge ---
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = Blue50
@@ -183,7 +183,7 @@ fun MenuScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Navigation Menu Items ─────────────────────────────────────────
+            // --- Navigation Menu Items ---
             MenuRow(
                 label = "Scan",
                 icon = Icons.Default.Search,
@@ -236,7 +236,7 @@ fun MenuScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Log Out Button ────────────────────────────────────────────────
+            // --- Log Out Button ---
             OutlinedButton(
                 onClick = {
                     TokenManager.clearToken(context)
@@ -279,7 +279,7 @@ fun MenuScreen(
     }
 }
 
-// ── Reusable menu row ─────────────────────────────────────────────────────────
+// --- Reusable menu row ---
 @Composable
 private fun MenuRow(
     label: String,

@@ -22,9 +22,10 @@ class SandboxViewModel(private val repository: WeblinkScannerRepository) : ViewM
 
     fun analyseSandbox(url: String, scanId: String) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
+            _isLoading.value     = true
+            _error.value         = null
             _sandboxReport.value = null
+            // Playwright runs locally - single blocking call, no polling needed
             when (val result = repository.analyseSandbox(url, scanId)) {
                 is Result.Success -> _sandboxReport.value = result.data
                 is Result.Error   -> _error.value = result.message
@@ -33,12 +34,6 @@ class SandboxViewModel(private val repository: WeblinkScannerRepository) : ViewM
         }
     }
 
-    fun clearError() {
-        _error.value = null
-    }
-
-    fun clearReport() {
-        _sandboxReport.value = null
-        _error.value = null
-    }
+    fun clearError()  { _error.value = null }
+    fun clearReport() { _sandboxReport.value = null; _error.value = null }
 }

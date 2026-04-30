@@ -76,10 +76,10 @@ private fun captureAndOcr(
 
 @Composable
 fun CameraScreen(
-    viewModel:      ScanViewModel,
-    userId:         String = "00000000-0000-0000-0000-000000000000",
+    viewModel: ScanViewModel,
+    userId: String = "00000000-0000-0000-0000-000000000000",
     onScanComplete: () -> Unit,
-    onBack:         () -> Unit
+    onBack: () -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context        = LocalContext.current
@@ -221,7 +221,7 @@ fun CameraScreen(
                                     onResult     = { text, isUrl ->
                                         detectedUrl = text
                                         urlDetected = isUrl
-                                        statusText  = if (isUrl) "URL detected!" else "No URL found — edit the field manually."
+                                        statusText  = if (isUrl) "URL detected!" else "No URL found - edit the field manually."
                                         isCapturing = false
                                     },
                                     onError = { msg -> statusText = msg; isCapturing = false }

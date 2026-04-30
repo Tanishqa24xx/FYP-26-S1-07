@@ -10,7 +10,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.linkscanner"
+        applicationId = "com.example.weblinkscanner"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

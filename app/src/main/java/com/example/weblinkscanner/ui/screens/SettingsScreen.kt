@@ -19,7 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// ── Colors — same palette as all other screens ────────────────────────────────
+// --- Colors: same palette as all other screens ---
 private val Blue600     = Color(0xFF2563EB)
 private val Blue50      = Color(0xFFEFF6FF)
 private val Blue100     = Color(0xFFDBEAFE)
@@ -34,19 +34,19 @@ private val ErrorRedBg  = Color(0xFFFEF2F2)
 
 @Composable
 fun SettingsScreen(
-    onNavigateToEditProfile: () -> Unit       = {},
-    onNavigateToAutoLogout: () -> Unit        = {},
-    onNavigateToHelpFaq: () -> Unit           = {},
-    onNavigateToWarningStrictness: () -> Unit = {},
-    onNavigateToSupport: () -> Unit           = {},
-    onDeleteAccount: () -> Unit               = {},
-    onBack: () -> Unit                        = {},
-    showWarningStrictness: Boolean            = true,
-    showReportSupport: Boolean                = true
+    onNavigateToEditProfile: () -> Unit        = {},
+    onNavigateToAutoLogout: () -> Unit         = {},
+    onNavigateToHelpFaq: () -> Unit            = {},
+    onNavigateToWarningStrictness: () -> Unit  = {},
+    onNavigateToSupport: () -> Unit            = {},
+    onDeleteAccount: () -> Unit                = {},
+    onBack: () -> Unit                         = {},
+    showWarningStrictness: Boolean             = true,
+    showReportSupport: Boolean                 = true
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // ── Delete Account Confirmation Dialog ────────────────────────────────────
+    // --- Delete Account Confirmation Dialog ---
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -115,7 +115,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(56.dp))
 
-            // ── Logo + Title ──────────────────────────────────────────────────
+            // --- Logo + Title ---
             Box(
                 modifier = Modifier
                     .size(72.dp)
@@ -145,7 +145,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // ── Settings Items ────────────────────────────────────────────────
+            // --- Settings Items ---
             SettingsRow(
                 label       = "Edit Profile",
                 description = "Update your name and email",
@@ -193,7 +193,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            // Delete Account — red tinted to signal danger
+            // Delete Account: red tinted to signal danger
             SettingsRow(
                 label       = "Delete Account",
                 description = "Permanently remove your account",
@@ -204,12 +204,12 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // ── Divider ───────────────────────────────────────────────────────
+            // --- Divider ---
             HorizontalDivider(color = DividerCol, thickness = 1.dp)
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Back Button ───────────────────────────────────────────────────
+            // --- Back Button ---
             OutlinedButton(
                 onClick  = onBack,
                 modifier = Modifier
@@ -239,7 +239,7 @@ fun SettingsScreen(
     }
 }
 
-// ── Reusable settings row ─────────────────────────────────────────────────────
+// --- Reusable settings row ---
 @Composable
 private fun SettingsRow(
     label: String,

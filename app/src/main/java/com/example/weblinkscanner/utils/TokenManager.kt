@@ -5,20 +5,20 @@ import android.content.SharedPreferences
 
 object TokenManager {
 
-    private const val PREF_NAME        = "linkscanner_prefs"
-    private const val KEY_TOKEN        = "access_token"
-    private const val KEY_EXPIRY       = "token_expiry"
-    private const val KEY_NAME         = "user_name"
-    private const val KEY_EMAIL        = "user_email"
-    private const val KEY_PLAN         = "user_plan"
-    private const val KEY_USER_ID      = "user_id"
-    private const val KEY_ROLE         = "user_role"
+    private const val PREF_NAME = "linkscanner_prefs"
+    private const val KEY_TOKEN = "access_token"
+    private const val KEY_EXPIRY = "token_expiry"
+    private const val KEY_NAME = "user_name"
+    private const val KEY_EMAIL = "user_email"
+    private const val KEY_PLAN = "user_plan"
+    private const val KEY_USER_ID = "user_id"
+    private const val KEY_ROLE    = "user_role"
     private const val SESSION_DURATION = 7 * 24 * 60 * 60 * 1000L // 7 days
 
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
-    // ── Save full session ─────────────────────────────────────────────────────
+    // --- Save full session ---
     fun saveSession(
         context: Context,
         token:   String,
@@ -49,7 +49,7 @@ object TokenManager {
             .apply()
     }
 
-    // ── Get token if valid ────────────────────────────────────────────────────
+    // --- Get token if valid ---
     fun getToken(context: Context): String? {
         val prefs  = prefs(context)
         val token  = prefs.getString(KEY_TOKEN, null)  ?: return null
@@ -60,14 +60,14 @@ object TokenManager {
 
     fun hasValidSession(context: Context) = getToken(context) != null
 
-    // ── Restore saved user info ───────────────────────────────────────────────
-    fun getSavedName(context: Context):   String = prefs(context).getString(KEY_NAME,    "") ?: ""
-    fun getSavedEmail(context: Context):  String = prefs(context).getString(KEY_EMAIL,   "") ?: ""
-    fun getSavedPlan(context: Context):   String = prefs(context).getString(KEY_PLAN,    "FREE") ?: "FREE"
+    // --- Restore saved user info ---
+    fun getSavedName(context: Context): String = prefs(context).getString(KEY_NAME,    "") ?: ""
+    fun getSavedEmail(context: Context): String = prefs(context).getString(KEY_EMAIL,   "") ?: ""
+    fun getSavedPlan(context: Context): String = prefs(context).getString(KEY_PLAN,    "FREE") ?: "FREE"
     fun getSavedUserId(context: Context): String = prefs(context).getString(KEY_USER_ID, "00000000-0000-0000-0000-000000000000") ?: "00000000-0000-0000-0000-000000000000"
     fun getSavedRole(context: Context):   String = prefs(context).getString(KEY_ROLE,    "user") ?: "user"
 
-    // ── Clear on logout ───────────────────────────────────────────────────────
+    // --- Clear on logout ---
     fun clearSession(context: Context) {
         prefs(context).edit().clear().apply()
     }

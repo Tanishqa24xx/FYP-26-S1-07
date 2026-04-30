@@ -56,7 +56,7 @@ fun HelpFaqScreen(
         scope.launch {
             try {
                 val result = repository.getHelpFaqs()
-                faqs      = result
+                faqs = result
                 isLoading = false
             } catch (e: Exception) {
                 errorMsg  = "Could not load FAQs."

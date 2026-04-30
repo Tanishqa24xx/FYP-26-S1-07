@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 
 object AutoLogoutManager {
 
-    private const val PREF_NAME       = "auto_logout_prefs"
+    private const val PREF_NAME = "auto_logout_prefs"
     private const val KEY_TIMEOUT_MIN = "timeout_minutes"
     private const val DEFAULT_TIMEOUT = 10  // minutes
 
