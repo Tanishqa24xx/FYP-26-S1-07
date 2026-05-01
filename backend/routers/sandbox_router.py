@@ -84,6 +84,7 @@ def build_report(report: dict, original_url: str) -> SandboxReport:
 async def analyse_sandbox(body: SandboxRequest):
     try:
         report = await run_sandbox(body.url)
+        check_user_permission(body.scan_id, "sandbox_analyse")
         return build_report(report, body.url)
     except Exception as e:
         return SandboxReport(

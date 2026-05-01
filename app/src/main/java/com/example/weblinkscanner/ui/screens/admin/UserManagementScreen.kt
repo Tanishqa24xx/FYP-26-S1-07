@@ -264,7 +264,7 @@ private fun UserRow(user: AdminUser, onClick: () -> Unit) {
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                     }
                     // Plan badge
-                    if (!user.plan.isNullOrBlank()) {
+                    if (!user.plan.isNullOrBlank() && user.role !in listOf("admin", "platform_manager")) {
                         Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFEDE9FE)) {
                             Text(user.plan.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold,
                                 color = Color(0xFF7C3AED),

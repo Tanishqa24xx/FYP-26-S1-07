@@ -173,12 +173,22 @@ private fun FlaggedLinkRow(record: AdminScanRecord) {
             Text(record.url ?: "Unknown URL", fontSize = 13.sp, color = FLTxt,
                 fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (!record.threatCategories.isNullOrEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    record.threatCategories.take(3).forEach { cat ->
-                        Surface(shape = RoundedCornerShape(4.dp), color = verdictBg) {
-                            Text(cat, fontSize = 10.sp, color = verdictColor,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                        }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = record.threatCategories.first().take(70) +
+                                if (record.threatCategories.first().length > 70) "…" else "",
+                        fontSize = 10.sp,
+                        color = FLMuted,  // or FLMuted for FlaggedLinksScreen
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (record.threatCategories.size > 1) {
+                        Text(
+                            "+${record.threatCategories.size - 1} more signal${if (record.threatCategories.size > 2) "s" else ""}",
+                            fontSize = 10.sp,
+                            color = FLMuted  // or FLMuted
+                        )
                     }
                 }
             }

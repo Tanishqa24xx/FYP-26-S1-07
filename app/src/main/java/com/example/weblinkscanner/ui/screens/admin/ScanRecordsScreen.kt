@@ -194,12 +194,22 @@ private fun ScanRecordRow(record: AdminScanRecord) {
             }
             // Threat categories
             if (!record.threatCategories.isNullOrEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    record.threatCategories.take(3).forEach { cat ->
-                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFF1F5F9)) {
-                            Text(cat, fontSize = 10.sp, color = SRMuted,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                        }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = record.threatCategories.first().take(70) +
+                                if (record.threatCategories.first().length > 70) "…" else "",
+                        fontSize = 10.sp,
+                        color = SRMuted,  // or FLMuted for FlaggedLinksScreen
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (record.threatCategories.size > 1) {
+                        Text(
+                            "+${record.threatCategories.size - 1} more signal${if (record.threatCategories.size > 2) "s" else ""}",
+                            fontSize = 10.sp,
+                            color = SRMuted  // or FLMuted
+                        )
                     }
                 }
             }

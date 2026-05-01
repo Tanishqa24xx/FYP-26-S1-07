@@ -18,8 +18,11 @@ from database import supabase
 
 router = APIRouter(prefix="/scan", tags=["Scan"])
 
-# --- Change this to adjust free plan daily limit ---
-FREE_DAILY_LIMIT = 5
+PLAN_DAILY_LIMITS = {
+    "free":     5,
+    "standard": 30,
+    "premium":  999999,  # effectively unlimited
+}
 
 URL_REGEX = re.compile(r"https?://[^\s]+", re.IGNORECASE)
 
@@ -37,27 +40,28 @@ def extract_url(text: str):
 
 
 def check_quota_and_get_plan(user_id: str) -> tuple:
-    # returns (remaining_scans, plan_name), raises 429 if daily limit hit
     GUEST_ID = "00000000-0000-0000-0000-000000000000"
     if user_id == GUEST_ID:
-        return FREE_DAILY_LIMIT, "free"
+        return PLAN_DAILY_LIMITS["free"], "free"
 
     try:
         rows = supabase.table("users") \
-            .select("plan, daily_scan_limit") \
-            .eq("id", user_id) \
-            .execute().data or []
+                   .select("plan") \
+                   .eq("id", user_id) \
+                   .execute().data or []
 
         if not rows:
-            return FREE_DAILY_LIMIT, "free"
+            return PLAN_DAILY_LIMITS["free"], "free"
 
-        plan = rows[0].get("plan", "free")
-        limit = rows[0].get("daily_scan_limit") or FREE_DAILY_LIMIT
+        plan = rows[0].get("plan", "free").lower()
+        limit = PLAN_DAILY_LIMITS.get(plan, PLAN_DAILY_LIMITS["free"])
 
-        if plan != "free":
-            return limit, plan
+        if plan == "premium":
+            return limit, plan  # no quota check for premium
 
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        today_start = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ).isoformat()
         count_result = supabase.table("scan_records") \
             .select("id", count="exact") \
             .eq("user_id", user_id) \
@@ -78,7 +82,7 @@ def check_quota_and_get_plan(user_id: str) -> tuple:
     except HTTPException:
         raise
     except Exception:
-        return FREE_DAILY_LIMIT, "free"
+        return PLAN_DAILY_LIMITS["free"], "free"
 
 
 def save_scan(user_id: str, url: str, result: dict, source: str) -> str:
@@ -113,6 +117,7 @@ def save_scan(user_id: str, url: str, result: dict, source: str) -> str:
 @router.post("/url", response_model=ScanResponse)
 async def scan_url(body: ScanRequest):
     user_id = body.user_id or "00000000-0000-0000-0000-000000000000"
+    check_user_permission(user_id, "scan_url")
     remaining, plan = check_quota_and_get_plan(user_id)
     result = await perform_scan(body.url)
     scan_id = save_scan(user_id, body.url, result, "manual")
@@ -137,6 +142,7 @@ async def scan_camera(body: CameraScanRequest):
     if not extracted_url:
         return CameraScanResponse(extracted_url=None, is_url=False, scan_result=None)
     user_id = body.user_id or "00000000-0000-0000-0000-000000000000"
+    check_user_permission(user_id, "scan_camera")
     remaining, plan = check_quota_and_get_plan(user_id)
     result = await perform_scan(extracted_url)
     scan_id = save_scan(user_id, extracted_url, result, "camera")
@@ -162,6 +168,7 @@ async def scan_qr(body: QRScanRequest):
     if not extracted_url:
         return QRScanResponse(extracted_url=None, is_url=False, scan_result=None)
     user_id = body.user_id or "00000000-0000-0000-0000-000000000000"
+    check_user_permission(user_id, "scan_qr")
     remaining, plan = check_quota_and_get_plan(user_id)
     result = await perform_scan(extracted_url)
     scan_id = save_scan(user_id, extracted_url, result, "qr")
@@ -401,3 +408,29 @@ def export_scan_history(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def check_user_permission(user_id: str, permission: str):
+    """Raise 403 if user's profile does not include the required permission."""
+    GUEST_ID = "00000000-0000-0000-0000-000000000000"
+    if user_id == GUEST_ID:
+        return  # guests bypass profile check
+    try:
+        rows = supabase.table("users").select("profile_id").eq("id", user_id).execute().data or []
+        if not rows or not rows[0].get("profile_id"):
+            return  # no profile assigned = no restrictions
+        profile_id = rows[0]["profile_id"]
+        profile = supabase.table("user_profiles").select("permissions, status") \
+                      .eq("id", profile_id).execute().data or []
+        if not profile:
+            return
+        if profile[0].get("status") == "suspended":
+            raise HTTPException(status_code=403, detail="Your access profile has been suspended.")
+        permissions = profile[0].get("permissions") or []
+        if permission not in permissions:
+            raise HTTPException(status_code=403,
+                                detail=f"Your access profile does not allow '{permission}'. Contact your administrator.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # on error, don't block the user

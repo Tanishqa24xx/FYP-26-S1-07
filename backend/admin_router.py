@@ -144,6 +144,8 @@ def update_user(user_id: str, request: UpdateUserRequest):
         if not update_data:
             raise HTTPException(status_code=400, detail="No fields to update")
         supabase.table("users").update(update_data).eq("id", user_id).execute()
+        log_admin_action("User Updated", target_type="user", target_id=user_id,
+                         details=str({k:v for k,v in request.dict().items() if v}))
         return fetch_one("users", id=user_id)
     except HTTPException:
         raise
@@ -235,6 +237,7 @@ def create_profile(request: CreateProfileRequest):
             "permissions": request.permissions,
             "status":      "active"
         }).execute()
+        log_admin_action("Profile Created", target_type="profile", target_id=result.data[0]["id"])
         return result.data[0] if result.data else {}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -261,6 +264,7 @@ def update_profile(profile_id: str, request: UpdateProfileRequest):
         if not update_data:
             raise HTTPException(status_code=400, detail="No fields to update")
         supabase.table("user_profiles").update(update_data).eq("id", profile_id).execute()
+        log_admin_action("Profile Updated", target_type="profile", target_id=profile_id)
         return fetch_one("user_profiles", id=profile_id)
     except HTTPException:
         raise
@@ -309,6 +313,7 @@ def assign_profile(user_id: str, request: AssignProfileRequest):
 def remove_profile(user_id: str):
     try:
         supabase.table("users").update({"profile_id": None}).eq("id", user_id).execute()
+        log_admin_action("Profile Removed from User", target_type="user", target_id=user_id)
         return {"message": "Profile removed from user."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -396,7 +401,9 @@ def get_audit_log():
 @router.get("/subscriptions")
 def get_subscriptions():
     try:
-        result = supabase.table("users").select("id, name, email, plan").order("plan").execute()
+        result = supabase.table("users").select("id, name, email, plan, role") \
+            .not_("role", "in", '("admin","platform_manager")') \
+            .order("plan").execute()
         users = result.data or []
         stats = {
             "total":    len(users),

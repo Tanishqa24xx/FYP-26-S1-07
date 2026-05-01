@@ -82,11 +82,12 @@ fun SubscriptionManagementScreen(
                 val allUsers = s.data.users
 
                 val filtered = allUsers.filter { user ->
+                    val isRegularUser = user.role?.lowercase() !in listOf("admin", "platform_manager")
                     val matchesPlan   = filterPlan == "All" || user.plan?.equals(filterPlan, ignoreCase = true) == true
                     val matchesSearch = searchQuery.isBlank() ||
                             user.name?.contains(searchQuery, ignoreCase = true) == true ||
                             user.email?.contains(searchQuery, ignoreCase = true) == true
-                    matchesPlan && matchesSearch
+                    isRegularUser && matchesPlan && matchesSearch
                 }
 
                 LazyColumn(

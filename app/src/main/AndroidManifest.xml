@@ -27,11 +27,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Sign Up activity -->
-        <activity
-            android:name=".ui.screens.LoginActivity"
-            android:exported="false" />
-
     </application>
 
 </manifest>

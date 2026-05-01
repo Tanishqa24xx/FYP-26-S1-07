@@ -332,36 +332,57 @@ fun ScanResultScreen(
 
             // --- Action buttons ---
 
-            Button(
-                onClick  = { onSecurityAnalysisClick(
-                    scan.url ?: "",
-                    scan.scanId,
-                    scan.riskLevel,
-                    scan.threatCategories.joinToString(",")
-                ) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
-            ) {
-                Icon(Icons.Default.Security, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("View Security Analysis", fontWeight = FontWeight.SemiBold)
+            if (isPaidPlan) {
+                // Security Analysis — Standard & Premium only
+                Button(
+                    onClick = { onSecurityAnalysisClick(
+                        scan.url ?: "", scan.scanId,
+                        scan.riskLevel, scan.threatCategories.joinToString(",")
+                    ) },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape    = RoundedCornerShape(14.dp),
+                    colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
+                ) {
+                    Icon(Icons.Default.Security, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("View Security Analysis", fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                Button(
+                    onClick = { onSandboxClick(scan.url ?: "", scan.scanId) },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape    = RoundedCornerShape(14.dp),
+                    colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
+                ) {
+                    Icon(Icons.Default.OpenInBrowser, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Open Link in Sandbox", fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(Modifier.height(10.dp))
+            } else {
+                // Free user — show upgrade prompt instead
+                Card(
+                    modifier  = Modifier.fillMaxWidth(),
+                    shape     = RoundedCornerShape(14.dp),
+                    colors    = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lock, null, tint = TextMuted, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Security Analysis & Sandbox",
+                                fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                            Text("Upgrade to Standard or Premium to access detailed security checks and sandbox analysis.",
+                                fontSize = 12.sp, color = TextMuted, lineHeight = 18.sp)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
             }
-
-            Spacer(Modifier.height(10.dp))
-
-            Button(
-                onClick  = { onSandboxClick(scan.url ?: "", scan.scanId) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
-            ) {
-                Icon(Icons.Default.OpenInBrowser, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Open Link in Sandbox", fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(Modifier.height(10.dp))
 
             // --- Share button (Standard and Premium only) ---
             if (isPaidPlan) {

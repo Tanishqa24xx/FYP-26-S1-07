@@ -39,11 +39,8 @@ async def get_my_plan(user_id: str = Query(default="00000000-0000-0000-0000-0000
             if rows:
                 current_plan = rows[0].get("plan", "free")
                 plan_lower = current_plan.lower()
-                if plan_lower in ("standard", "premium"):
-                    # paid plans are unlimited, use a large number so the UI progress bar still works
-                    daily_limit = 999999
-                else:
-                    daily_limit = rows[0].get("daily_scan_limit") or 5
+                PLAN_LIMITS = {"free": 5, "standard": 30, "premium": 999999}
+                daily_limit = PLAN_LIMITS.get(plan_lower, 5)
 
             # Count today's scans from scan_records using UTC midnight
             from datetime import datetime, timezone

@@ -62,6 +62,7 @@ class AsnInfo(BaseModel):
 class SandboxRequest(BaseModel):
     url: str
     scan_id: str
+    user_id: Optional[str] = "00000000-0000-0000-0000-000000000000"
 
 class SandboxReport(BaseModel):
     sandbox_id:   str

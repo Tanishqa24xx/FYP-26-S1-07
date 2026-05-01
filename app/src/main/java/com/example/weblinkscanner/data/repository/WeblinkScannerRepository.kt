@@ -42,7 +42,7 @@ class WeblinkScannerRepository(private val session: SessionStore) {
         safeCall { api.scanQr(bearer(), QRScanRequest(rawQrData, userId)) }
 
     // --- Sandbox ---
-    suspend fun analyseSandbox(url: String, scanId: String): Result<SandboxReport> =
+    suspend fun analyseSandbox(url: String, scanId: String, userId: String): Result<SandboxReport> =
         safeCall { api.analyseSandbox(bearer(), SandboxRequest(url, scanId)) }
 
     // --- Saved Links ---

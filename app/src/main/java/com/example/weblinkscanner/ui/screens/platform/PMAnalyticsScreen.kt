@@ -149,3 +149,26 @@ private fun AnalyticsStatCard(label: String, value: String, icon: ImageVector, c
         }
     }
 }
+/*
+// Simple bar chart composable for verdict breakdown
+@Composable
+fun SimpleBarChart(data: Map<String, Int>, colors: Map<String, Color>) {
+    val max = data.values.maxOrNull()?.coerceAtLeast(1) ?: 1
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        data.forEach { (label, value) ->
+            val color = colors[label] ?: Color.Gray
+            val fraction = value.toFloat() / max
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(label, fontSize = 11.sp, modifier = Modifier.width(80.dp), color = TextMuted)
+                Box(Modifier.weight(1f).height(20.dp)
+                    .background(Color(0xFFE2E8F0), RoundedCornerShape(4.dp))) {
+                    Box(Modifier.fillMaxWidth(fraction).fillMaxHeight()
+                        .background(color, RoundedCornerShape(4.dp)))
+                }
+                Spacer(Modifier.width(8.dp))
+                Text("$value", fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.width(30.dp))
+            }
+        }
+    }
+}*/

@@ -75,6 +75,7 @@ interface NewApiService {
     @POST("sandbox/analyse")
     suspend fun analyseSandbox(
         @Header("Authorization") token: String,
+        @Query("user_id") userId: String,
         @Body request: SandboxRequest
     ): Response<SandboxReport>
 
