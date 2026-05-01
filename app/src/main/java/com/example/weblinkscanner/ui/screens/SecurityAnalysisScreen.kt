@@ -16,11 +16,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.weblinkscanner.viewmodel.SandboxViewModel
+import androidx.compose.ui.text.font.FontWeight
 
 private val Blue600     = Color(0xFF2563EB)
 private val Blue50      = Color(0xFFEFF6FF)
@@ -43,6 +43,7 @@ fun SecurityAnalysisScreen(
     viewModel: SandboxViewModel,
     url: String,
     scanId: String,
+    userId: String,
     verdict: String = "UNKNOWN",
     threatCategories: String = "",
     userPlan: String = "free",
@@ -60,7 +61,7 @@ fun SecurityAnalysisScreen(
 
     LaunchedEffect(scanId) {
         if (!isBlacklisted) {
-            viewModel.analyseSandbox(url, scanId)
+            viewModel.analyseSandbox(url, scanId, userId)
         }
     }
 

@@ -20,13 +20,13 @@ class SandboxViewModel(private val repository: WeblinkScannerRepository) : ViewM
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    fun analyseSandbox(url: String, scanId: String) {
+    fun analyseSandbox(url: String, scanId: String, userId: String) {
         viewModelScope.launch {
             _isLoading.value     = true
             _error.value         = null
             _sandboxReport.value = null
             // Playwright runs locally - single blocking call, no polling needed
-            when (val result = repository.analyseSandbox(url, scanId)) {
+            when (val result = repository.analyseSandbox(url, scanId, userId)) {
                 is Result.Success -> _sandboxReport.value = result.data
                 is Result.Error   -> _error.value = result.message
             }

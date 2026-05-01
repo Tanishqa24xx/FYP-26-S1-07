@@ -56,6 +56,7 @@ fun SandboxScreen(
     viewModel: SandboxViewModel,
     url: String,
     scanId: String,
+    userId: String,
     onBack: () -> Unit
 ) {
     val report  by viewModel.sandboxReport.collectAsState()
@@ -68,7 +69,7 @@ fun SandboxScreen(
     // if Security Analysis already fetched the report, reuse it here.
     LaunchedEffect(url) {
         if (report == null || report?.url != url) {
-            viewModel.analyseSandbox(url, scanId)
+            viewModel.analyseSandbox(url, scanId, userId)
         }
     }
 
@@ -105,7 +106,7 @@ fun SandboxScreen(
 
             when {
                 loading        -> LoadingCard()
-                error != null  -> ErrorCard(error!!) { viewModel.analyseSandbox(url, scanId) }
+                error != null  -> ErrorCard(error!!) { viewModel.analyseSandbox(url, scanId, userId) }
                 report != null -> ReportContent(report!!, context)
             }
 

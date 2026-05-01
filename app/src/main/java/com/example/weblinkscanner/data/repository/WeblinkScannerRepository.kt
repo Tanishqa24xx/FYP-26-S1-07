@@ -43,7 +43,7 @@ class WeblinkScannerRepository(private val session: SessionStore) {
 
     // --- Sandbox ---
     suspend fun analyseSandbox(url: String, scanId: String, userId: String): Result<SandboxReport> =
-        safeCall { api.analyseSandbox(bearer(), SandboxRequest(url, scanId)) }
+        safeCall { api.analyseSandbox(bearer(), userId, SandboxRequest(url, scanId)) }
 
     // --- Saved Links ---
     suspend fun saveLink(userId: String, url: String, scanId: String?, riskLevel: String?): Result<Map<String, String>> =

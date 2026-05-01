@@ -281,6 +281,7 @@ fun AppNavigation(
             val url    = java.net.URLDecoder.decode(back.arguments?.getString("url") ?: "", "UTF-8")
             val scanId = back.arguments?.getString("scanId") ?: ""
             SandboxScreen(viewModel = sandboxViewModel, url = url, scanId = scanId,
+                userId = loggedInUserId,
                 onBack = { navController.popBackStack() })
         }
 
@@ -302,6 +303,7 @@ fun AppNavigation(
                 viewModel        = sandboxViewModel,
                 url              = url,
                 scanId           = scanId,
+                userId           = loggedInUserId,
                 verdict          = verdict,
                 threatCategories = categories,
                 userPlan         = loggedInPlan,
