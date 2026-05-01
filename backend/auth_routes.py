@@ -6,7 +6,6 @@ from fastapi import APIRouter, HTTPException, Request, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from database import supabase
-from auth import logout_user
 from supabase import create_client
 from config import settings
 
@@ -18,6 +17,20 @@ SMTP_USER        = os.environ.get("SMTP_USER", "")
 SMTP_PASS        = os.environ.get("SMTP_PASS", "")
 SERVER_BASE_URL  = os.environ.get("SERVER_BASE_URL", "http://localhost:8000")
 
+def get_approver_emails() -> list[str]:
+    """Fetch all approved admin emails + the developer fallback."""
+    try:
+        rows = supabase.table("users").select("email") \
+                   .eq("role", "admin") \
+                   .eq("status", "approved") \
+                   .execute().data or []
+        emails = [r["email"] for r in rows if r.get("email")]
+    except Exception:
+        emails = []
+    dev_email = os.environ.get("DEVELOPER_EMAIL", "")
+    if dev_email and dev_email not in emails:
+        emails.append(dev_email)
+    return emails if emails else [dev_email]
 
 def send_approval_email(user_id: str, name: str, email: str, role: str):
     approve_url = f"{SERVER_BASE_URL}/approve?user_id={user_id}&action=approve"
@@ -92,13 +105,14 @@ def send_approval_email(user_id: str, name: str, email: str, role: str):
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"[Weblink Scanner] New {role_label} signup - {name}"
         msg["From"]    = SMTP_USER
-        msg["To"]      = ", ".join(DEVELOPER_EMAILS)
+        recipients = get_approver_emails()
+        msg["To"] = ", ".join(recipients)
         msg.attach(MIMEText(plain_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body,  "html",  "utf-8"))
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(SMTP_USER, DEVELOPER_EMAILS, msg.as_string())
+            server.sendmail(SMTP_USER, recipients, msg.as_string())
         print(f"[EMAIL] Approval email sent to {DEVELOPER_EMAILS} for {name} ({email})")
     except Exception as e:
         print(f"[EMAIL ERROR] Failed to send approval email: {e}")
@@ -288,7 +302,13 @@ def login(user: UserAuth):
 @router.post("/logout")
 def logout():
     try:
-        logout_user()
+        # Initialize auth client inline
+        from supabase import create_client as _cc
+        _auth = _cc(
+            settings.SUPABASE_AUTH_URL or settings.SUPABASE_URL,
+            settings.SUPABASE_AUTH_ANON_KEY or settings.SUPABASE_ANON_KEY
+        )
+        _auth.auth.sign_out()
         return {"message": "Logged out"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=safe_error(e))

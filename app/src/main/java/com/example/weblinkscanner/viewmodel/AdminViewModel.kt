@@ -426,4 +426,16 @@ class AdminViewModel : ViewModel() {
             }
         }
     }
+
+    private val _pendingCount = MutableStateFlow(0)
+    val pendingCount: StateFlow<Int> = _pendingCount.asStateFlow()
+
+    fun loadPendingCount(token: String) {
+        viewModelScope.launch {
+            try {
+                val r = NewRetrofitClient.api.getAdminPendingCount("Bearer $token")
+                if (r.isSuccessful) _pendingCount.value = r.body()?.get("count")?.toInt() ?: 0
+            } catch (e: Exception) { /* silent */ }
+        }
+    }
 }

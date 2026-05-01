@@ -41,6 +41,8 @@ fun SettingsScreen(
     onNavigateToSupport: () -> Unit            = {},
     onDeleteAccount: () -> Unit                = {},
     onBack: () -> Unit                         = {},
+    onNavigateToScanLimitNotification: () -> Unit = {},
+    showScanLimitNotification: Boolean = true,
     showWarningStrictness: Boolean             = true,
     showReportSupport: Boolean                 = true
 ) {
@@ -189,6 +191,16 @@ fun SettingsScreen(
                     description = "Set how sensitive scan warnings are",
                     icon        = Icons.Default.Tune,
                     onClick     = onNavigateToWarningStrictness
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            if (showScanLimitNotification) {
+                SettingsRow(
+                    label       = "Scan Limit Notification",
+                    description = "Get notified when approaching your daily scan limit",
+                    icon        = Icons.Default.Notifications,
+                    onClick     = onNavigateToScanLimitNotification
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }

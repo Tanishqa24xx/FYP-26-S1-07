@@ -121,6 +121,18 @@ fun PMSystemHealthScreen(
                                             Text(name.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PMTxt)
                                             svc.responseMs?.let { ms ->
                                                 Text("${ms}ms", fontSize = 11.sp, color = PMMuted)
+                                                Spacer(Modifier.height(4.dp))
+                                                val barColor = if (ms < 100) PMGreen else if (ms < 500) PMAmber else PMRed
+                                                val fraction = (ms.toFloat() / 1000f).coerceIn(0f, 1f)
+                                                Box(
+                                                    Modifier.fillMaxWidth().height(4.dp)
+                                                        .background(Color(0xFFE2E8F0), RoundedCornerShape(2.dp))
+                                                ) {
+                                                    Box(
+                                                        Modifier.fillMaxWidth(fraction).fillMaxHeight()
+                                                            .background(barColor, RoundedCornerShape(2.dp))
+                                                    )
+                                                }
                                             }
                                         }
                                     }

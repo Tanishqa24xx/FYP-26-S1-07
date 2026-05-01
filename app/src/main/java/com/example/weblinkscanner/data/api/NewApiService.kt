@@ -315,6 +315,11 @@ interface NewApiService {
         @Header("Authorization") token: String
     ): Response<SubscriptionResponse>
 
+    @GET("admin/pending-count")
+    suspend fun getAdminPendingCount(
+        @Header("Authorization") token: String
+    ): Response<Map<String, Int>>
+
     // ── PLATFORM MANAGER ──────────────────────────────────────────────────────
     @GET("platform/plans")
     suspend fun getPMPlans(

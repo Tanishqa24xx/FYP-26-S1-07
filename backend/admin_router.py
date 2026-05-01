@@ -414,3 +414,13 @@ def get_subscriptions():
         return {"stats": stats, "users": users}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/pending-count")
+def get_pending_count():
+    try:
+        result = supabase.table("users").select("id", count="exact") \
+            .eq("status", "pending").execute()
+        return {"count": result.count or 0}
+    except Exception:
+        return {"count": 0}

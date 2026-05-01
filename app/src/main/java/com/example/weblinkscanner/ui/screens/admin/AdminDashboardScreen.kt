@@ -52,10 +52,25 @@ fun AdminDashboardScreen(
 ) {
     val statsState by viewModel.stats.collectAsState()
 
+    var pendingCount by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        viewModel.loadStats(token)
+        viewModel.loadPendingCount(token)
+    }
+    val pendingCountState by viewModel.pendingCount.collectAsState()
+
     LaunchedEffect(Unit) { viewModel.loadStats(token) }
 
     val initials = adminName.trim().split(" ").filter { it.isNotBlank() }
         .take(2).joinToString("") { it.first().uppercaseChar().toString() }
+
+    BadgedBox(
+        badge = { if (pendingCountState > 0) Badge { Text("$pendingCountState") } }
+    ) {
+        IconButton(onClick = onNavigateToUserManagement) {
+            Icon(Icons.Default.Notifications, null, tint = AdminAmber)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -79,7 +94,7 @@ fun AdminDashboardScreen(
             ) {
                 Column {
                     Text("Admin Dashboard", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AdminBlue)
-                    Text("LinkScanner", fontSize = 13.sp, color = TextMuted)
+                    Text("WeblinkScanner", fontSize = 13.sp, color = TextMuted)
                 }
                 Surface(shape = RoundedCornerShape(8.dp), color = AdminAmber.copy(alpha = 0.15f)) {
                     Text(
