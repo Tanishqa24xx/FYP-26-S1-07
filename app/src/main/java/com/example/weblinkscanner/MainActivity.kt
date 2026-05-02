@@ -37,7 +37,6 @@ import com.example.weblinkscanner.ui.screens.AutoLogoutScreen
 import com.example.weblinkscanner.ui.screens.WarningStrictnessScreen
 import com.example.weblinkscanner.ui.screens.UserSupportScreen
 import com.example.weblinkscanner.ui.screens.BrowseScanScreen
-import com.example.weblinkscanner.utils.WarningStrictnessManager
 import com.example.weblinkscanner.ui.screens.admin.AdminDashboardScreen
 import com.example.weblinkscanner.ui.screens.admin.UserManagementScreen
 import com.example.weblinkscanner.ui.screens.admin.UserDetailScreen
@@ -48,6 +47,7 @@ import com.example.weblinkscanner.ui.screens.admin.ScanRecordsScreen
 import com.example.weblinkscanner.ui.screens.admin.FlaggedLinksScreen
 import com.example.weblinkscanner.ui.screens.admin.AuditLogScreen
 import com.example.weblinkscanner.ui.screens.admin.SubscriptionManagementScreen
+import com.example.weblinkscanner.ui.screens.ScanLimitNotificationScreen
 import com.example.weblinkscanner.viewmodel.AdminViewModel
 import com.example.weblinkscanner.viewmodel.PlatformViewModel
 import androidx.lifecycle.Lifecycle
@@ -55,6 +55,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.weblinkscanner.utils.AutoLogoutManager
 import com.example.weblinkscanner.utils.TokenManager
+import com.example.weblinkscanner.utils.WarningStrictnessManager
 import com.example.weblinkscanner.viewmodel.ScanViewModel
 import com.example.weblinkscanner.viewmodel.SandboxViewModel
 import com.example.weblinkscanner.viewmodel.PlanViewModel
@@ -380,14 +381,20 @@ fun AppNavigation(
         // ── Settings ───────────────────────────────────────────────────────────
         composable("settings") {
             val isRegularUser = loggedInRole == "user"
+            val isPM          = loggedInRole == "platform_manager"
+            val isAdmin       = loggedInRole == "admin"
+            val hasLimitPlan  = loggedInPlan.lowercase() in listOf("free", "standard")
             SettingsScreen(
-                onNavigateToEditProfile      = { navController.navigate("edit_profile") },
-                onNavigateToAutoLogout       = { navController.navigate("auto_logout") },
-                onNavigateToHelpFaq          = { navController.navigate("help_faq") },
-                onNavigateToWarningStrictness = { navController.navigate("warning_strictness") },
-                onNavigateToSupport          = { navController.navigate("user_support") },
-                showWarningStrictness        = isRegularUser,
-                showReportSupport            = isRegularUser,
+                onNavigateToEditProfile           = { navController.navigate("edit_profile") },
+                onNavigateToAutoLogout            = { navController.navigate("auto_logout") },
+                onNavigateToHelpFaq               = { navController.navigate("help_faq") },
+                onNavigateToWarningStrictness     = { navController.navigate("warning_strictness") },
+                onNavigateToSupport               = { navController.navigate("user_support") },
+                onNavigateToScanLimitNotification = { navController.navigate("scan_limit_notification") },
+                showWarningStrictness             = isRegularUser,
+                showReportSupport                 = isRegularUser,
+                showHelpFaq                       = !isPM,   // PM manages FAQ, doesn't need to view it here
+                showScanLimitNotification         = isRegularUser && hasLimitPlan,
                 onDeleteAccount = {
                     val userIdToDelete = loggedInUserId
                     android.util.Log.d("DELETE", "Starting delete for userId=$userIdToDelete")
@@ -427,6 +434,15 @@ fun AppNavigation(
         // ── Warning Strictness ─────────────────────────────────────────────────
         composable("warning_strictness") {
             WarningStrictnessScreen(userId = loggedInUserId, onBack = { navController.popBackStack() })
+        }
+
+        // --- Scan Limit Notification ---
+        composable("scan_limit_notification") {
+            ScanLimitNotificationScreen(
+                userId   = loggedInUserId,
+                userPlan = loggedInPlan,
+                onBack   = { navController.popBackStack() }
+            )
         }
 
         // ── User Support / Report ──────────────────────────────────────────────

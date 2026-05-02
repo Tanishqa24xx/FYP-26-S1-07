@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.example.weblinkscanner.data.repository.WeblinkScannerRepository
 import com.example.weblinkscanner.viewmodel.ScanViewModel
 import com.example.weblinkscanner.utils.WarningStrictnessManager
+import com.example.weblinkscanner.utils.ScanLimitNotificationManager
 import kotlinx.coroutines.launch
 
 // --- Colors ---
@@ -74,6 +75,12 @@ fun ScanResultScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val isPaidPlan  = userPlan.lowercase() in listOf("standard", "premium")
+    val isStandardPlan = userPlan.lowercase() == "standard"
+    val hasLimit       = !isPaidPlan || isStandardPlan  // free and standard have limits
+    val hasLimitPlan   = userPlan.lowercase() in listOf("free", "standard")
+    val notifEnabled   = ScanLimitNotificationManager.isEnabled(
+        LocalContext.current, userId
+    )
     val strictness  = WarningStrictnessManager.get(LocalContext.current, userId)
 
     var bannerDismissed by remember { mutableStateOf(false) }
@@ -130,7 +137,7 @@ fun ScanResultScreen(
 
             // --- Scans remaining banner — Free plan only ---
             AnimatedVisibility(
-                visible = remaining != null && !bannerDismissed && !isPaidPlan,
+                visible = remaining != null && !bannerDismissed && hasLimitPlan && notifEnabled,
                 enter   = slideInVertically() + fadeIn(),
                 exit    = slideOutVertically() + fadeOut()
             ) {

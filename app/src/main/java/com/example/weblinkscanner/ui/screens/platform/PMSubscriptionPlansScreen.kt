@@ -155,6 +155,29 @@ private fun PlanCard(plan: PMSubscriptionPlan, onClick: () -> Unit) {
                     Text(if (plan.scanLimit == 0) "Unlimited" else "${plan.scanLimit}/day", fontSize = 12.sp, color = PMMuted)
                 }
             }
+            if (plan.features.isNotEmpty()) {
+                HorizontalDivider(color = Color(0xFFE2E8F0))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    plan.features.take(4).forEach { feature ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                null,
+                                tint = PMGreen,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(feature, fontSize = 11.sp, color = PMMuted)
+                        }
+                    }
+                    if (plan.features.size > 4) {
+                        Text(
+                            "+${plan.features.size - 4} more features",
+                            fontSize = 10.sp, color = PMMuted
+                        )
+                    }
+                }
+            }
         }
     }
 }
