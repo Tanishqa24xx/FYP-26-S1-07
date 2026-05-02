@@ -21,6 +21,9 @@ class Settings:
     # --- URLhaus ---
     URLHAUS_API_KEY: str = os.getenv("URLHAUS_API_KEY", "")
 
+    # --- PhishTank ---
+    PHISHTANK_API_KEY: str = os.getenv("PHISHTANK_API_KEY", "")
+
     # --- urlscan.io (optional) ---
     URLSCAN_API_KEY: str = os.getenv("URLSCAN_API_KEY", "")
 
