@@ -401,18 +401,33 @@ def get_audit_log():
 @router.get("/subscriptions")
 def get_subscriptions():
     try:
-        result = supabase.table("users").select("id, name, email, plan, role") \
-            .not_("role", "in", '("admin","platform_manager")') \
-            .order("plan").execute()
-        users = result.data or []
+        result = supabase.table("users").select("id, name, email, plan, role").execute()
+        all_data = result.data or []
+
+        excluded_roles = {"admin", "platform_manager"}
+        users = [
+            u for u in all_data
+            if (u.get("role") or "user").lower() not in excluded_roles
+        ]
+
         stats = {
             "total":    len(users),
-            "free":     sum(1 for u in users if u.get("plan", "free").lower() == "free"),
-            "standard": sum(1 for u in users if u.get("plan", "free").lower() == "standard"),
-            "premium":  sum(1 for u in users if u.get("plan", "free").lower() == "premium"),
+            "free":     0,
+            "standard": 0,
+            "premium":  0
         }
+
+        for u in users:
+            p = (u.get("plan") or "free").lower()
+            if p == "standard": stats["standard"] += 1
+            elif p == "premium": stats["premium"] += 1
+            else: stats["free"] += 1
+
         return {"stats": stats, "users": users}
+
     except Exception as e:
+        # This will print the exact error to your server console so you can see why it's failing
+        print(f"Subscription Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

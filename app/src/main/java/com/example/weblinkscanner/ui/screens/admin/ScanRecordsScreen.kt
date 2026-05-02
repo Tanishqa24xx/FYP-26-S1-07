@@ -9,6 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -160,6 +162,9 @@ private fun ScanRecordRow(record: AdminScanRecord) {
         "SUSPICIOUS" -> SRAmber to SRAmberBg
         else         -> SRGreen to SRGreenBg
     }
+
+    var expanded by remember { mutableStateOf(false) }
+
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(12.dp),
@@ -193,22 +198,60 @@ private fun ScanRecordRow(record: AdminScanRecord) {
                 }
             }
             // Threat categories
+            // --- Updated Threat Categories Section ---
             if (!record.threatCategories.isNullOrEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = Color(0xFFF1F5F9))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     Text(
-                        text = record.threatCategories.first().take(70) +
-                                if (record.threatCategories.first().length > 70) "…" else "",
+                        "Detection Reasons:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = SRTxt
+                    )
+
+                    // Expand/Collapse Arrow
+                    IconButton(
+                        onClick = { expanded = !expanded },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (expanded) "Collapse" else "Expand",
+                            tint = SRMuted
+                        )
+                    }
+                }
+
+                if (expanded) {
+                    // Show all reasons
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        record.threatCategories.forEach { category ->
+                            Row(verticalAlignment = Alignment.Top) {
+                                Text("• ", fontSize = 10.sp, color = verdictColor)
+                                Text(category, fontSize = 10.sp, color = SRMuted, lineHeight = 14.sp)
+                            }
+                        }
+                    }
+                } else {
+                    // Show only the first reason with ellipsis
+                    Text(
+                        text = record.threatCategories.first(),
                         fontSize = 10.sp,
-                        color = SRMuted,  // or FLMuted for FlaggedLinksScreen
+                        color = SRMuted,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth()
+                        overflow = TextOverflow.Ellipsis
                     )
                     if (record.threatCategories.size > 1) {
                         Text(
                             "+${record.threatCategories.size - 1} more signal${if (record.threatCategories.size > 2) "s" else ""}",
                             fontSize = 10.sp,
-                            color = SRMuted  // or FLMuted
+                            fontWeight = FontWeight.Bold,
+                            color = SRBlue
                         )
                     }
                 }

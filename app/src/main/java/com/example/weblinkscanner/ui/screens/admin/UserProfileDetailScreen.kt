@@ -225,15 +225,16 @@ fun UserProfileDetailScreen(
                     }
 
                     // ── Permissions Card ──────────────────────────────────────
+                    Text("Permissions", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DMuted)
+                    Spacer(Modifier.height(8.dp))
+
                     Card(
-                        modifier  = Modifier.fillMaxWidth(),
-                        shape     = RoundedCornerShape(16.dp),
-                        colors    = CardDefaults.cardColors(containerColor = DCardBg),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = DCardBg),
                         elevation = CardDefaults.cardElevation(2.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Permissions", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DMuted)
-                            HorizontalDivider(Modifier.padding(vertical = 4.dp), color = Color(0xFFE2E8F0))
+                        Column(modifier = Modifier.padding(16.dp)) {
 
                             if (isEditing) {
                                 // Name field
@@ -292,34 +293,65 @@ fun UserProfileDetailScreen(
                                     }
                                 }
                             }
+                        }
 
-                            if (isEditing) {
-                                Spacer(Modifier.height(8.dp))
-                                val isSaving = actionResult is AdminViewModel.UiState.Loading
-                                Button(
-                                    onClick = {
-                                        viewModel.updateProfile(
-                                            token     = token,
-                                            profileId = profileId,
-                                            request   = AdminProfileUpdateRequest(
-                                                name        = editName.trim().ifBlank { null },
-                                                description = editDescription.trim().ifBlank { null },
-                                                permissions = editPermissions.toList()
-                                            ),
-                                            onDone = {}
-                                        )
-                                    },
-                                    enabled  = !isSaving,
-                                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                                    shape    = RoundedCornerShape(10.dp),
-                                    colors   = ButtonDefaults.buttonColors(containerColor = DBlue)
-                                ) {
-                                    if (isSaving) CircularProgressIndicator(
-                                        color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp
-                                    )
-                                    else Text("Save Changes", color = Color.White, fontWeight = FontWeight.Bold)
-                                }
+                    }
+
+                    // ── NEW: Warning for Zero Permissions ─────────────────────────────────────
+                    // Place this OUTSIDE the card for better visibility
+                    if (!isEditing && profile.permissions.isEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)) // Light Amber Bg
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD97706), // Amber
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    text = "Warning: This profile has no permissions. Users assigned to this profile will be unable to use any app features.",
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp,
+                                    color = Color(0xFFD97706),
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
+                        }
+                    }
+
+                    // Move the "Save Changes" button logic here if isEditing is true
+                    if (isEditing) {
+                        Spacer(Modifier.height(12.dp))
+                        val isSaving = actionResult is AdminViewModel.UiState.Loading
+                        Button(
+                            onClick = {
+                                viewModel.updateProfile(
+                                    token     = token,
+                                    profileId = profileId,
+                                    request   = AdminProfileUpdateRequest(
+                                        name        = editName.trim().ifBlank { null },
+                                        description = editDescription.trim().ifBlank { null },
+                                        permissions = editPermissions.toList()
+                                    ),
+                                    onDone = {}
+                                )
+                            },
+                            enabled  = !isSaving,
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape    = RoundedCornerShape(10.dp),
+                            colors   = ButtonDefaults.buttonColors(containerColor = DBlue)
+                        ) {
+                            if (isSaving) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            else Text("Save Changes", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
 

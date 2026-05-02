@@ -46,48 +46,36 @@ private data class PlanOption(
 
 private val PLAN_OPTIONS = listOf(
     PlanOption(
-        id    = "free",
-        name  = "Free",
-        price = "\$0/month",
-        color = Color(0xFF64748B),
-        bg    = Color(0xFFF1F5F9),
+        id = "free", name = "Free", price = "\$0/month",
+        color = Color(0xFF64748B), bg = Color(0xFFF1F5F9),
         features = listOf(
             "5 scans/day",
-            "Manual URL scanning",
-            "Camera OCR scanning",
+            "Manual URL, Camera & QR scanning",
             "Basic Risk Classification",
             "Save Important Links",
             "Last 5 scans in history"
         )
     ),
     PlanOption(
-        id    = "standard",
-        name  = "Standard",
-        price = "\$4.99/month",
-        color = Blue600,
-        bg    = Blue50,
+        id = "standard", name = "Standard", price = "\$4.99/month",
+        color = Blue600, bg = Blue50,
         features = listOf(
-            "Unlimited scans",
-            "Detailed Risk Classification",
-            "Detailed Security Analysis",
-            "Alert Threshold Notification",
-            "Last 30 days scan history",
-            "Export history (CSV + PDF)"
+            "30 scans/day",
+            "Standard Security Analysis",
+            "Sandbox Environment",
+            "Browse & auto-scan mode",
+            "Last 30 days history + Export"
         )
     ),
     PlanOption(
-        id    = "premium",
-        name  = "Premium",
-        price = "\$9.99/month",
-        color = Blue600,
-        bg    = Blue50,
+        id = "premium", name = "Premium", price = "\$9.99/month",
+        color = Blue600, bg = Blue50,
         features = listOf(
+            "Unlimited scans",
             "Everything in Standard",
-            "Advanced Multi-layer Analysis",
-            "Full scan history",
-            "Export history (CSV + PDF)",
-            "Ad-heavy website warnings",
-            "Script & tracker detection"
+            "Advanced Security Analysis",
+            "Ad-heavy & tracker detection",
+            "Full history + Export"
         )
     )
 )

@@ -49,7 +49,22 @@ fun MyPlanScreen(
     val dailyLimit = myPlan?.dailyLimit ?: 5
     val scansToday = myPlan?.scansToday ?: 0
     val remaining = (dailyLimit - scansToday).coerceAtLeast(0)
-    val isPaid = planName != "FREE"
+    val isPremium = planName == "PREMIUM"
+
+    val planAccentColor = when (planName) {
+        "PREMIUM"  -> AmberWarn
+        "STANDARD" -> Blue600
+        else       -> Blue600
+    }
+    val planBadgeBg = when (planName) {
+        "PREMIUM" -> AmberBg
+        else      -> Blue50
+    }
+    val planIcon = when (planName) {
+        "PREMIUM" -> Icons.Default.Star
+        "STANDARD" -> Icons.Default.WorkspacePremium
+        else      -> Icons.Default.Shield
+    }
 
     Box(
         modifier = Modifier
@@ -72,7 +87,7 @@ fun MyPlanScreen(
                     .background(Brush.radialGradient(listOf(Blue100, Blue50)), RoundedCornerShape(18.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.WorkspacePremium, null, tint = Blue600, modifier = Modifier.size(32.dp))
+                Icon(planIcon, null, tint = planAccentColor, modifier = Modifier.size(32.dp))
             }
             Spacer(Modifier.height(12.dp))
             Text("My Plan", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Blue600)
@@ -87,7 +102,7 @@ fun MyPlanScreen(
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
-                colors    = CardDefaults.cardColors(containerColor = if (isPaid) AmberBg else Blue50),
+                colors    = CardDefaults.cardColors(containerColor = planBadgeBg),
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Row(
@@ -95,9 +110,9 @@ fun MyPlanScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        if (isPaid) Icons.Default.Star else Icons.Default.Shield,
+                        planIcon,
                         null,
-                        tint     = if (isPaid) AmberWarn else Blue600,
+                        tint     = planAccentColor,
                         modifier = Modifier.size(32.dp)
                     )
                     Spacer(Modifier.width(16.dp))
@@ -106,7 +121,7 @@ fun MyPlanScreen(
                             "$planName Plan",
                             fontSize   = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color      = if (isPaid) AmberWarn else Blue600
+                            color      = planAccentColor
                         )
                         Text(
                             when (planName) {
@@ -147,8 +162,8 @@ fun MyPlanScreen(
                     Text("Today's Usage", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     Spacer(Modifier.height(12.dp))
 
-                    if (isPaid) {
-                        // Paid plans: unlimited scans - just show how many done today
+                    if (isPremium) {
+                        // Premium only: truly unlimited
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -156,29 +171,27 @@ fun MyPlanScreen(
                         ) {
                             UsageStat("Scans Today", "$scansToday", TextPrimary)
                             Surface(shape = RoundedCornerShape(8.dp), color = GreenBg) {
-                                Text(
-                                    "Unlimited",
-                                    fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                Text("Unlimited", fontSize = 13.sp, fontWeight = FontWeight.Bold,
                                     color = GreenPass,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                )
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
                             }
                         }
                         Spacer(Modifier.height(4.dp))
-                        Text("No daily limit - scan as many links as you need.", fontSize = 11.sp, color = TextMuted)
+                        Text("No daily limit — scan as many links as you need.", fontSize = 11.sp, color = TextMuted)
                     } else {
+                        // Free (5/day) and Standard (30/day): show count + progress bar
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             UsageStat("Scans Used",  "$scansToday", TextPrimary)
-                            UsageStat("Daily Limit", "$dailyLimit", TextPrimary)
-                            UsageStat("Remaining",   "$remaining",  if (remaining > 0) GreenPass else Color(0xFFDC2626))
+                            UsageStat("Daily Limit", "$dailyLimit",  TextPrimary)
+                            UsageStat("Remaining",   "$remaining",
+                                if (remaining > 0) GreenPass else Color(0xFFDC2626))
                         }
                         Spacer(Modifier.height(12.dp))
                         val progress = if (dailyLimit > 0) scansToday.toFloat() / dailyLimit else 0f
                         LinearProgressIndicator(
                             progress   = { progress.coerceIn(0f, 1f) },
-                            modifier   = Modifier.fillMaxWidth().height(8.dp)
-                                .then(Modifier.background(Color.Transparent, RoundedCornerShape(4.dp))),
-                            color      = if (progress > 0.8f) Color(0xFFDC2626) else Blue600,
+                            modifier   = Modifier.fillMaxWidth().height(8.dp),
+                            color      = if (progress > 0.8f) Color(0xFFDC2626) else planAccentColor,
                             trackColor = DividerCol,
                         )
                         Spacer(Modifier.height(4.dp))

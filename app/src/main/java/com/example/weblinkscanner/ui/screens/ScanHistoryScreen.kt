@@ -72,6 +72,8 @@ fun ScanHistoryScreen(
     var filterVerdict by remember { mutableStateOf("ALL") }
     var sortOrder     by remember { mutableStateOf(SortOrder.NEWEST_FIRST) }
 
+    val isSelectionMode = selectedIds.isNotEmpty()
+
     LaunchedEffect(userId) {
         isLoading = true
         errorMsg  = null
@@ -143,289 +145,304 @@ fun ScanHistoryScreen(
         )
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(PageBgTop, PageBgBot)))
-    ) {
-        Column(
+    Scaffold(
+        floatingActionButton = {
+            if (isSelectionMode) {
+                SelectionFloatingBar(
+                    selectedCount = selectedIds.size,
+                    onClear       = { selectedIds = emptySet() },
+                    onDelete      = { showClearSel = true }
+                )
+            }
+        },
+        floatingActionButtonPosition = FabPosition.Center
+    ) { paddingValues ->
+        // This Box acts as the fixed container
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(paddingValues)
+                .background(Brush.verticalGradient(listOf(PageBgTop, PageBgBot)))
         ) {
-            Spacer(Modifier.height(52.dp))
-
-            Box(
+            // 1. The Scrollable Content
+            Column(
                 modifier = Modifier
-                    .size(64.dp)
-                    .background(Brush.radialGradient(listOf(Blue100, Blue50)), RoundedCornerShape(18.dp)),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(32.dp))
-            }
+                Spacer(Modifier.height(52.dp))
 
-            Spacer(Modifier.height(12.dp))
-            Text("Scan History", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Blue600)
-            Text("Your recent URL scans", fontSize = 14.sp, color = TextMuted)
-            Spacer(Modifier.height(24.dp))
-
-            // Search + filter + sort — paid plans only
-            if (isPaidPlan) {
-                // Search bar
-                OutlinedTextField(
-                    value         = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder   = { Text("Search by URL or verdict", color = TextMuted) },
-                    leadingIcon   = { Icon(Icons.Default.Search, null, tint = Blue600) },
-                    trailingIcon  = if (searchQuery.isNotBlank()) ({
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, null, tint = TextMuted)
-                        }
-                    }) else null,
-                    singleLine    = true,
-                    modifier      = Modifier.fillMaxWidth(),
-                    shape         = RoundedCornerShape(12.dp),
-                    colors        = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor   = Blue600,
-                        unfocusedBorderColor = DividerCol,
-                        focusedTextColor     = TextPrimary,
-                        unfocusedTextColor   = TextPrimary,
-                        cursorColor          = Blue600
-                    )
-                )
-                Spacer(Modifier.height(10.dp))
-
-                // Verdict filter chips + sort toggle on same row
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    verticalAlignment     = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                // Header Icon
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(Brush.radialGradient(listOf(Blue100, Blue50)), RoundedCornerShape(18.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Verdict chips
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("ALL", "SAFE", "SUSPICIOUS", "DANGEROUS").forEach { verdict ->
-                            val isActive = filterVerdict == verdict
-                            val chipColor = when (verdict) {
-                                "SAFE"       -> Color(0xFF16A34A)
-                                "SUSPICIOUS" -> Color(0xFFD97706)
-                                "DANGEROUS"  -> Color(0xFFDC2626)
-                                else         -> Blue600
+                    Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(32.dp))
+                }
+
+                Spacer(Modifier.height(12.dp))
+                Text("Scan History", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Blue600)
+                Text("Your recent URL scans", fontSize = 14.sp, color = TextMuted)
+                Spacer(Modifier.height(24.dp))
+
+                // Search + filter + sort — paid plans only
+                if (isPaidPlan) {
+                    // Search bar
+                    OutlinedTextField(
+                        value         = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder   = { Text("Search by URL or verdict", color = TextMuted) },
+                        leadingIcon   = { Icon(Icons.Default.Search, null, tint = Blue600) },
+                        trailingIcon  = if (searchQuery.isNotBlank()) ({
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, null, tint = TextMuted)
                             }
-                            FilterChip(
-                                selected = isActive,
-                                onClick  = { filterVerdict = verdict },
-                                label    = { Text(verdict, fontSize = 10.sp) },
-                                colors   = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = chipColor.copy(alpha = 0.15f),
-                                    selectedLabelColor     = chipColor
-                                )
-                            )
-                        }
-                    }
-
-                    // Sort toggle button
-                    IconButton(
-                        onClick = {
-                            sortOrder = if (sortOrder == SortOrder.NEWEST_FIRST)
-                                SortOrder.OLDEST_FIRST else SortOrder.NEWEST_FIRST
-                        },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (sortOrder == SortOrder.NEWEST_FIRST)
-                                Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
-                            contentDescription = if (sortOrder == SortOrder.NEWEST_FIRST)
-                                "Newest first" else "Oldest first",
-                            tint     = Blue600,
-                            modifier = Modifier.size(20.dp)
+                        }) else null,
+                        singleLine    = true,
+                        modifier      = Modifier.fillMaxWidth(),
+                        shape         = RoundedCornerShape(12.dp),
+                        colors        = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor   = Blue600,
+                            unfocusedBorderColor = DividerCol,
+                            focusedTextColor     = TextPrimary,
+                            unfocusedTextColor   = TextPrimary,
+                            cursorColor          = Blue600
                         )
-                    }
-                }
-
-                // Sort label
-                Row(
-                    modifier          = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Sort, null, tint = TextMuted, modifier = Modifier.size(13.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        if (sortOrder == SortOrder.NEWEST_FIRST) "Newest first" else "Oldest first",
-                        fontSize = 11.sp, color = TextMuted
                     )
-                }
-                Spacer(Modifier.height(10.dp))
-            }
+                    Spacer(Modifier.height(10.dp))
 
-            // History list
-            Card(
-                modifier  = Modifier.fillMaxWidth(),
-                shape     = RoundedCornerShape(16.dp),
-                colors    = CardDefaults.cardColors(containerColor = CardBg),
-                elevation = CardDefaults.cardElevation(3.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    when {
-                        isLoading -> Box(
-                            Modifier.fillMaxWidth().padding(32.dp),
-                            Alignment.Center
-                        ) { CircularProgressIndicator(color = Blue600) }
-
-                        errorMsg != null -> Text(
-                            errorMsg!!, color = RedDanger, fontSize = 13.sp,
-                            modifier = Modifier.padding(8.dp)
-                        )
-
-                        displayItems.isEmpty() -> Box(
-                            Modifier.fillMaxWidth().padding(32.dp),
-                            Alignment.Center
-                        ) {
-                            Text(
-                                if (items.isEmpty()) "No scan history yet.\nScan a URL to get started."
-                                else "No results match your search.",
-                                color     = TextMuted,
-                                fontSize  = 14.sp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
+                    // Verdict filter chips + sort toggle on same row
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Verdict chips
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("ALL", "SAFE", "SUSPICIOUS", "DANGEROUS").forEach { verdict ->
+                                val isActive = filterVerdict == verdict
+                                val chipColor = when (verdict) {
+                                    "SAFE"       -> Color(0xFF16A34A)
+                                    "SUSPICIOUS" -> Color(0xFFD97706)
+                                    "DANGEROUS"  -> Color(0xFFDC2626)
+                                    else         -> Blue600
+                                }
+                                FilterChip(
+                                    selected = isActive,
+                                    onClick  = { filterVerdict = verdict },
+                                    label    = { Text(verdict, fontSize = 10.sp) },
+                                    colors   = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = chipColor.copy(alpha = 0.15f),
+                                        selectedLabelColor     = chipColor
+                                    )
+                                )
+                            }
                         }
 
-                        else -> displayItems.forEachIndexed { index, item ->
-                            HistoryRow(
-                                url        = item.url ?: "",
-                                riskLevel  = item.riskLevel,
-                                date       = item.scannedAt.take(10),
-                                isSelected = item.scanId in selectedIds,
-                                onToggle   = {
-                                    selectedIds = if (item.scanId in selectedIds)
-                                        selectedIds - item.scanId
-                                    else
-                                        selectedIds + item.scanId
-                                }
+                        // Sort toggle button
+                        IconButton(
+                            onClick = {
+                                sortOrder = if (sortOrder == SortOrder.NEWEST_FIRST)
+                                    SortOrder.OLDEST_FIRST else SortOrder.NEWEST_FIRST
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (sortOrder == SortOrder.NEWEST_FIRST)
+                                    Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
+                                contentDescription = if (sortOrder == SortOrder.NEWEST_FIRST)
+                                    "Newest first" else "Oldest first",
+                                tint     = Blue600,
+                                modifier = Modifier.size(20.dp)
                             )
-                            if (index < displayItems.lastIndex)
-                                HorizontalDivider(color = DividerCol, thickness = 0.5.dp)
+                        }
+                    }
+
+                    // Sort label
+                    Row(
+                        modifier          = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Sort, null, tint = TextMuted, modifier = Modifier.size(13.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            if (sortOrder == SortOrder.NEWEST_FIRST) "Newest first" else "Oldest first",
+                            fontSize = 11.sp, color = TextMuted
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                }
+
+                // History list
+                Card(
+                    modifier  = Modifier.fillMaxWidth(),
+                    shape     = RoundedCornerShape(16.dp),
+                    colors    = CardDefaults.cardColors(containerColor = CardBg),
+                    elevation = CardDefaults.cardElevation(3.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        when {
+                            isLoading -> Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                Alignment.Center
+                            ) { CircularProgressIndicator(color = Blue600) }
+
+                            errorMsg != null -> Text(
+                                errorMsg!!, color = RedDanger, fontSize = 13.sp,
+                                modifier = Modifier.padding(8.dp)
+                            )
+
+                            displayItems.isEmpty() -> Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                Alignment.Center
+                            ) {
+                                Text(
+                                    if (items.isEmpty()) "No scan history yet.\nScan a URL to get started."
+                                    else "No results match your search.",
+                                    color     = TextMuted,
+                                    fontSize  = 14.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+
+                            else -> displayItems.forEachIndexed { index, item ->
+                                HistoryRow(
+                                    url        = item.url ?: "",
+                                    riskLevel  = item.riskLevel,
+                                    date       = item.scannedAt.take(10),
+                                    isSelected = item.scanId in selectedIds,
+                                    onToggle   = {
+                                        selectedIds = if (item.scanId in selectedIds)
+                                            selectedIds - item.scanId
+                                        else
+                                            selectedIds + item.scanId
+                                    }
+                                )
+                                if (index < displayItems.lastIndex)
+                                    HorizontalDivider(color = DividerCol, thickness = 0.5.dp)
+                            }
                         }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(20.dp))
 
-            Button(
-                onClick  = { showClearSel = true },
-                enabled  = selectedIds.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp),
-                colors   = ButtonDefaults.buttonColors(
-                    containerColor         = Blue600,
-                    disabledContainerColor = DividerCol
-                )
-            ) {
-                Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    if (selectedIds.isEmpty()) "Clear Selected"
-                    else "Clear Selected (${selectedIds.size})",
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            OutlinedButton(
-                onClick  = { showClearAll = true },
-                enabled  = items.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp),
-                border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
-                colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedDanger)
-            ) {
-                Icon(Icons.Default.Delete, null,
-                    tint     = if (items.isNotEmpty()) RedDanger else TextMuted,
-                    modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Clear All", fontWeight = FontWeight.SemiBold,
-                    color = if (items.isNotEmpty()) RedDanger else TextMuted)
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            // Export — Standard (CSV) and Premium (CSV + PDF)
-            if (isPaidPlan) {
-                val isPremium = userPlan.lowercase() == "premium"
-                var showExportMenu by remember { mutableStateOf(false) }
-                val context = androidx.compose.ui.platform.LocalContext.current
-                val baseUrl = "http://10.0.2.2:8000/scan/export"
-
-                Box(modifier = Modifier.fillMaxWidth()) {
+                if (!isSelectionMode && items.isNotEmpty()) {
                     OutlinedButton(
-                        onClick  = { showExportMenu = true },
-                        enabled  = items.isNotEmpty(),
+                        onClick  = { showClearAll = true },
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape    = RoundedCornerShape(14.dp),
                         border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
-                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
+                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedDanger)
                     ) {
-                        Icon(Icons.Default.Share, null,
-                            tint     = if (items.isNotEmpty()) Blue600 else TextMuted,
-                            modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Delete, null, tint = RedDanger, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Export History", fontWeight = FontWeight.SemiBold,
-                            color = if (items.isNotEmpty()) Blue600 else TextMuted)
+                        Text("Clear All History", fontWeight = FontWeight.SemiBold)
                     }
+                    Spacer(Modifier.height(10.dp))
+                }
 
-                    DropdownMenu(
-                        expanded         = showExportMenu,
-                        onDismissRequest = { showExportMenu = false }
+                // Export — Standard (CSV) and Premium (CSV + PDF)
+                if (isPaidPlan && items.isNotEmpty() && !isSelectionMode) {
+                    val isPremium = userPlan.lowercase() == "premium"
+                    var showExportMenu by remember { mutableStateOf(false) }
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val baseUrl = "http://10.0.2.2:8000/scan/export"
+
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick  = { showExportMenu = true },
+                            enabled  = items.isNotEmpty(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape    = RoundedCornerShape(14.dp),
+                            border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
+                            colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
+                        ) {
+                            Icon(Icons.Default.Share, null,
+                                tint     = if (items.isNotEmpty()) Blue600 else TextMuted,
+                                modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Export History", fontWeight = FontWeight.SemiBold,
+                                color = if (items.isNotEmpty()) Blue600 else TextMuted)
+                        }
+
+                        DropdownMenu(
+                            expanded         = showExportMenu,
+                            onDismissRequest = { showExportMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text    = { Text("Export as CSV") },
+                                onClick = {
+                                    showExportMenu = false
+                                    val url = "$baseUrl?user_id=$userId&fmt=csv"
+                                    val intent = android.content.Intent(
+                                        android.content.Intent.ACTION_VIEW,
+                                        android.net.Uri.parse(url)
+                                    )
+                                    context.startActivity(intent)
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(18.dp))
+                                }
+                            )
+                            DropdownMenuItem(
+                                text    = { Text("Export as PDF") },
+                                onClick = {
+                                    showExportMenu = false
+                                    val url = "$baseUrl?user_id=$userId&fmt=pdf"
+                                    val intent = android.content.Intent(
+                                        android.content.Intent.ACTION_VIEW,
+                                        android.net.Uri.parse(url)
+                                    )
+                                    context.startActivity(intent)
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(18.dp))
+                                }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                }
+
+                Spacer(Modifier.height(140.dp))
+            }
+
+            if (!isSelectionMode) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                0.0f to Color.Transparent,
+                                0.3f to PageBgBot.copy(alpha = 0.9f),
+                                1.0f to PageBgBot
+                            )
+                        )
+                        .padding(24.dp)
+                ) {
+                    OutlinedButton(
+                        onClick  = onBack,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape    = RoundedCornerShape(14.dp),
+                        border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
+                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600, containerColor = Color.White)
                     ) {
-                        DropdownMenuItem(
-                            text    = { Text("Export as CSV") },
-                            onClick = {
-                                showExportMenu = false
-                                val url = "$baseUrl?user_id=$userId&fmt=csv"
-                                val intent = android.content.Intent(
-                                    android.content.Intent.ACTION_VIEW,
-                                    android.net.Uri.parse(url)
-                                )
-                                context.startActivity(intent)
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(18.dp))
-                            }
-                        )
-                        DropdownMenuItem(
-                            text    = { Text("Export as PDF") },
-                            onClick = {
-                                showExportMenu = false
-                                val url = "$baseUrl?user_id=$userId&fmt=pdf"
-                                val intent = android.content.Intent(
-                                    android.content.Intent.ACTION_VIEW,
-                                    android.net.Uri.parse(url)
-                                )
-                                context.startActivity(intent)
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.History, null, tint = Blue600, modifier = Modifier.size(18.dp))
-                            }
-                        )
+                        Text("Back", fontWeight = FontWeight.Bold)
                     }
                 }
-                Spacer(Modifier.height(10.dp))
             }
-
-            OutlinedButton(
-                onClick  = onBack,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp),
-                border   = ButtonDefaults.outlinedButtonBorder.copy(width = 1.5.dp),
-                colors   = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
-            ) {
-                Text("Back", fontWeight = FontWeight.SemiBold, color = Blue600)
-            }
-
-            Spacer(Modifier.height(32.dp))
         }
     }
 }
@@ -442,7 +459,9 @@ private fun HistoryRow(
         else         -> Pair(TextMuted,  Blue50)
     }
     Row(
-        modifier          = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        modifier          = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -465,5 +484,60 @@ private fun HistoryRow(
             onCheckedChange = { onToggle() },
             colors          = CheckboxDefaults.colors(checkedColor = Blue600, uncheckedColor = TextMuted)
         )
+    }
+}
+
+@Composable
+fun SelectionFloatingBar(
+    selectedCount: Int,
+    onClear: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 10.dp) // Lift it slightly off the edge
+            .fillMaxWidth(0.95f)
+            .height(64.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = TextPrimary, // Changed from DTxt to match your file
+        tonalElevation = 8.dp,
+        shadowElevation = 12.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = "$selectedCount selected",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = "Tap 'x' to cancel",
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontSize = 10.sp
+                )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onClear) {
+                    Icon(Icons.Default.Clear, "Clear", tint = Color.White)
+                }
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.buttonColors(containerColor = RedDanger), // Changed from DRed
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Delete", fontSize = 13.sp)
+                }
+            }
+        }
     }
 }

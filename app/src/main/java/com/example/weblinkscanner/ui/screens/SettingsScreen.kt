@@ -44,7 +44,8 @@ fun SettingsScreen(
     onNavigateToScanLimitNotification: () -> Unit = {},
     showScanLimitNotification: Boolean = true,
     showWarningStrictness: Boolean             = true,
-    showReportSupport: Boolean                 = true
+    showReportSupport: Boolean                 = true,
+    showHelpFaq: Boolean                       = true
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -166,14 +167,15 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            SettingsRow(
-                label       = "Help / FAQ",
-                description = "Get support and find answers",
-                icon        = Icons.Default.HelpOutline,
-                onClick     = onNavigateToHelpFaq
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
+            if (showHelpFaq) {
+                SettingsRow(
+                    label       = "Help / FAQ",
+                    description = "Get support and find answers",
+                    icon        = Icons.Default.HelpOutline,
+                    onClick     = onNavigateToHelpFaq
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             if (showReportSupport) {
                 SettingsRow(

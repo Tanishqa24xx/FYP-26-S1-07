@@ -99,12 +99,16 @@ fun PMSystemHealthScreen(
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         health.services.entries.chunked(2).forEach { pair ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 pair.forEach { (name, svc) ->
                                     val isOk = svc.status == "healthy"
                                     val icon = serviceIcons[name] ?: Icons.Default.Cloud
                                     Card(
-                                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp),
+                                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                                        shape = RoundedCornerShape(14.dp),
                                         colors   = CardDefaults.cardColors(containerColor = PMCardBg),
                                         elevation= CardDefaults.cardElevation(2.dp)
                                     ) {

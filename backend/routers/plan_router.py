@@ -9,9 +9,49 @@ from datetime import date
 router = APIRouter()
 
 PLAN_CATALOGUE = [
-    PlanInfo(name="Free", price="$0/month", scan_limit="5 scans/day", features=["Manual URL scanning","Camera OCR scanning","Basic Risk Level Classification","Save Important Links","Standard Security Analysis","Sandbox Environment","Last 5 scans in History"]),
-    PlanInfo(name="Standard", price="$4.99/month", scan_limit="Unlimited scans", features=["Manual URL scanning","Camera OCR scanning","Unlimited scans","Detailed Risk Level Classification","Save Important Links","Detailed Security Analysis","Alert Threshold Notification","Sandbox Environment","Last 30 days scan history","Export history (CSV + PDF)"]),
-    PlanInfo(name="Premium", price="$9.99/month", scan_limit="Unlimited scans", features=["All Standard features","Advanced Multi-layer Security Analysis","Full scan history","Export history (CSV + PDF)","Ad-heavy website warnings","Script & tracker detection"]),
+    PlanInfo(
+        name="Free", price="$0/month", scan_limit="5 scans/day",
+        features=[
+            "5 scans/day",
+            "Manual URL scanning",
+            "Camera OCR scanning",
+            "QR Code scanning",
+            "Basic Risk Classification (Safe/Suspicious/Dangerous)",
+            "Save scanned links",
+            "Last 5 scans in history",
+        ]
+    ),
+    PlanInfo(
+        name="Standard", price="$4.99/month", scan_limit="30 scans/day",
+        features=[
+            "30 scans/day",
+            "Manual URL scanning",
+            "Camera OCR scanning",
+            "QR Code scanning",
+            "Detailed Risk Classification",
+            "Standard Security Analysis",
+            "Sandbox environment analysis",
+            "Save scanned links",
+            "Browse & auto-scan mode",
+            "Share scan results",
+            "Adjustable warning strictness",
+            "Last 30 days scan history",
+            "Export history (CSV + PDF)",
+            "Scan limit notifications",
+        ]
+    ),
+    PlanInfo(
+        name="Premium", price="$9.99/month", scan_limit="Unlimited",
+        features=[
+            "Unlimited scans",
+            "Everything in Standard",
+            "Advanced Security Analysis",
+            "Ad-heavy website detection",
+            "Script & tracker detection",
+            "Full scan history (all time)",
+            "Export history (CSV + PDF)",
+        ]
+    ),
 ]
 
 def get_plan_details(plan_name: str) -> PlanInfo:

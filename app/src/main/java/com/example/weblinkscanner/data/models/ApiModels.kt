@@ -51,7 +51,8 @@ data class QRScanResponse(
 
 data class SandboxRequest(
     val url: String,
-    @SerializedName("scan_id") val scanId: String
+    @SerializedName("scan_id") val scanId: String,
+    @SerializedName("user_id") val userId: String = "00000000-0000-0000-0000-000000000000"
 )
 
 data class SslInfo(
