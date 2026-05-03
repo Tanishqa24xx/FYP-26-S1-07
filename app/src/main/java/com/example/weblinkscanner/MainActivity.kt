@@ -35,12 +35,27 @@ import kotlinx.coroutines.launch
 import com.example.weblinkscanner.ui.screens.HelpFaqScreen
 import com.example.weblinkscanner.ui.screens.AutoLogoutScreen
 import com.example.weblinkscanner.ui.screens.WarningStrictnessScreen
-import com.example.weblinkscanner.utils.WarningStrictnessManager
+import com.example.weblinkscanner.ui.screens.UserSupportScreen
+import com.example.weblinkscanner.ui.screens.BrowseScanScreen
+import com.example.weblinkscanner.ui.screens.admin.AdminDashboardScreen
+import com.example.weblinkscanner.ui.screens.admin.UserManagementScreen
+import com.example.weblinkscanner.ui.screens.admin.UserDetailScreen
+import com.example.weblinkscanner.ui.screens.admin.UserProfilesScreen
+import com.example.weblinkscanner.ui.screens.admin.UserProfileDetailScreen
+import com.example.weblinkscanner.ui.screens.admin.SecurityMonitorScreen
+import com.example.weblinkscanner.ui.screens.admin.ScanRecordsScreen
+import com.example.weblinkscanner.ui.screens.admin.FlaggedLinksScreen
+import com.example.weblinkscanner.ui.screens.admin.AuditLogScreen
+import com.example.weblinkscanner.ui.screens.admin.SubscriptionManagementScreen
+import com.example.weblinkscanner.ui.screens.ScanLimitNotificationScreen
+import com.example.weblinkscanner.viewmodel.AdminViewModel
+import com.example.weblinkscanner.viewmodel.PlatformViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.weblinkscanner.utils.AutoLogoutManager
 import com.example.weblinkscanner.utils.TokenManager
+import com.example.weblinkscanner.utils.WarningStrictnessManager
 import com.example.weblinkscanner.viewmodel.ScanViewModel
 import com.example.weblinkscanner.viewmodel.SandboxViewModel
 import com.example.weblinkscanner.viewmodel.PlanViewModel
@@ -51,20 +66,27 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val hasSession   = TokenManager.hasValidSession(this)
         val sessionStore = SessionStore(applicationContext)
-        // Restore saved session info so menu shows correct name/plan on resume
         val savedName    = TokenManager.getSavedName(this)
         val savedEmail   = TokenManager.getSavedEmail(this)
         val savedPlan    = TokenManager.getSavedPlan(this)
         val savedUserId  = TokenManager.getSavedUserId(this)
+        val savedRole    = TokenManager.getSavedRole(this)
+        val startDest    = when {
+            hasSession && savedRole == "admin"            -> "admin_dashboard"
+            hasSession && savedRole == "platform_manager" -> "pm_dashboard"
+            hasSession                                    -> "menu"
+            else                                          -> "login"
+        }
         setContent {
             WeblinkScannerTheme {
                 AppNavigation(
-                    startDestination = if (hasSession) "menu" else "login",
+                    startDestination = startDest,
                     sessionStore     = sessionStore,
                     savedName        = savedName,
                     savedEmail       = savedEmail,
                     savedPlan        = savedPlan,
-                    savedUserId      = savedUserId
+                    savedUserId      = savedUserId,
+                    savedRole        = savedRole
                 )
             }
         }
@@ -78,22 +100,34 @@ fun AppNavigation(
     savedName:        String = "",
     savedEmail:       String = "",
     savedPlan:        String = "FREE",
-    savedUserId:      String = "00000000-0000-0000-0000-000000000000"
+    savedUserId:      String = "00000000-0000-0000-0000-000000000000",
+    savedRole:        String = "user"
 ) {
     val context       = LocalContext.current
     val navController = rememberNavController()
 
-    // Initialise with saved values so name/plan show immediately on resume
     var loggedInName   by remember { mutableStateOf(savedName) }
     var loggedInEmail  by remember { mutableStateOf(savedEmail) }
     var loggedInPlan   by remember { mutableStateOf(savedPlan) }
     var loggedInUserId by remember { mutableStateOf(savedUserId) }
     var loggedInToken  by remember { mutableStateOf("") }
+    var loggedInRole   by remember { mutableStateOf(savedRole) }
 
     val repository       = remember { WeblinkScannerRepository(sessionStore) }
     val scanViewModel    = remember { ScanViewModel(repository) }
     val sandboxViewModel = remember { SandboxViewModel(repository) }
     val planViewModel    = remember { PlanViewModel(repository) }
+    val adminViewModel   = remember { AdminViewModel() }
+    val platformViewModel = remember { PlatformViewModel() }
+
+    // Sync loggedInPlan whenever planViewModel refreshes (e.g. after upgrade or screen resume)
+    val myPlanState by planViewModel.myPlan.collectAsState()
+    LaunchedEffect(myPlanState) {
+        val newPlan = myPlanState?.currentPlan
+        if (!newPlan.isNullOrBlank()) {
+            loggedInPlan = newPlan.lowercase()
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     var lastActiveTime by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -125,13 +159,19 @@ fun AppNavigation(
         // --- Login ---
         composable("login") {
             LoginScreen(
-                onLoginSuccess = { name, email, plan, userId, token ->
+                onLoginSuccess = { name, email, plan, userId, token, role ->
                     loggedInName   = name
                     loggedInEmail  = email
                     loggedInPlan   = plan
                     loggedInUserId = userId
                     loggedInToken  = token
-                    navController.navigate("menu") {
+                    loggedInRole   = role
+                    val dest = when (role) {
+                        "admin"            -> "admin_dashboard"
+                        "platform_manager" -> "pm_dashboard"
+                        else               -> "menu"
+                    }
+                    navController.navigate(dest) {
                         popUpTo("login") { inclusive = true }
                     }
                 },
@@ -160,8 +200,8 @@ fun AppNavigation(
                 onNavigateToScanHistory = { navController.navigate("scan_history") },
                 onNavigateToSavedLinks  = { navController.navigate("saved_links") },
                 onNavigateToSettings    = { navController.navigate("settings") },
+                onNavigateToBrowseScan  = { navController.navigate("browse_scan") },
                 onLogout = {
-                    scanViewModel.clearRecentScans()
                     scanViewModel.clearRecentScans()
                     TokenManager.clearSession(context)
                     loggedInName = ""; loggedInEmail = ""; loggedInPlan = "FREE"
@@ -242,6 +282,7 @@ fun AppNavigation(
             val url    = java.net.URLDecoder.decode(back.arguments?.getString("url") ?: "", "UTF-8")
             val scanId = back.arguments?.getString("scanId") ?: ""
             SandboxScreen(viewModel = sandboxViewModel, url = url, scanId = scanId,
+                userId = loggedInUserId,
                 onBack = { navController.popBackStack() })
         }
 
@@ -263,6 +304,7 @@ fun AppNavigation(
                 viewModel        = sandboxViewModel,
                 url              = url,
                 scanId           = scanId,
+                userId           = loggedInUserId,
                 verdict          = verdict,
                 threatCategories = categories,
                 userPlan         = loggedInPlan,
@@ -289,8 +331,10 @@ fun AppNavigation(
 
         // --- Plans ---
         composable("plans") {
+            LaunchedEffect(Unit) { planViewModel.loadMyPlan(loggedInUserId) }
             PlansScreen(
                 viewModel      = planViewModel,
+                userId         = loggedInUserId,
                 onUpgradeClick = { plan -> navController.navigate("upgrade_plan/$plan") },
                 onBack         = { navController.popBackStack() }
             )
@@ -302,8 +346,16 @@ fun AppNavigation(
             arguments = listOf(navArgument("plan") { type = NavType.StringType })
         ) { back ->
             val plan = back.arguments?.getString("plan") ?: "standard"
-            UpgradePlanScreen(viewModel = planViewModel, preSelectedPlan = plan,
-                onBack = { navController.popBackStack() })
+            LaunchedEffect(Unit) { planViewModel.loadMyPlan(loggedInUserId) }
+            UpgradePlanScreen(
+                viewModel       = planViewModel,
+                userId          = loggedInUserId,
+                preSelectedPlan = plan,
+                onBack          = {
+                    planViewModel.loadMyPlan(loggedInUserId)
+                    navController.popBackStack()
+                }
+            )
         }
 
         // --- Scan History ---
@@ -328,11 +380,21 @@ fun AppNavigation(
 
         // --- Settings ---
         composable("settings") {
+            val isRegularUser = loggedInRole == "user"
+            val isPM          = loggedInRole == "platform_manager"
+            val isAdmin       = loggedInRole == "admin"
+            val hasLimitPlan  = loggedInPlan.lowercase() in listOf("free", "standard")
             SettingsScreen(
-                onNavigateToEditProfile      = { navController.navigate("edit_profile") },
-                onNavigateToAutoLogout       = { navController.navigate("auto_logout") },
-                onNavigateToHelpFaq          = { navController.navigate("help_faq") },
-                onNavigateToWarningStrictness = { navController.navigate("warning_strictness") },
+                onNavigateToEditProfile           = { navController.navigate("edit_profile") },
+                onNavigateToAutoLogout            = { navController.navigate("auto_logout") },
+                onNavigateToHelpFaq               = { navController.navigate("help_faq") },
+                onNavigateToWarningStrictness     = { navController.navigate("warning_strictness") },
+                onNavigateToSupport               = { navController.navigate("user_support") },
+                onNavigateToScanLimitNotification = { navController.navigate("scan_limit_notification") },
+                showWarningStrictness             = isRegularUser,
+                showReportSupport                 = isRegularUser,
+                showHelpFaq                       = !isPM,   // PM manages FAQ, doesn't need to view it here
+                showScanLimitNotification         = isRegularUser && hasLimitPlan,
                 onDeleteAccount = {
                     val userIdToDelete = loggedInUserId
                     android.util.Log.d("DELETE", "Starting delete for userId=$userIdToDelete")
@@ -374,16 +436,253 @@ fun AppNavigation(
             WarningStrictnessScreen(userId = loggedInUserId, onBack = { navController.popBackStack() })
         }
 
-        // --- Edit Profile --- 
+        // --- Scan Limit Notification ---
+        composable("scan_limit_notification") {
+            ScanLimitNotificationScreen(
+                userId   = loggedInUserId,
+                userPlan = loggedInPlan,
+                onBack   = { navController.popBackStack() }
+            )
+        }
+
+        // --- User Support / Report ---
+        composable("user_support") {
+            UserSupportScreen(
+                repository = repository,
+                userId     = loggedInUserId,
+                userEmail  = loggedInEmail,
+                onBack     = { navController.popBackStack() }
+            )
+        }
+
+        // --- Browse & Scan (Standard + Premium) ---
+        composable("browse_scan") {
+            BrowseScanScreen(
+                repository = repository,
+                userId     = loggedInUserId,
+                userPlan   = loggedInPlan,
+                onBack     = { navController.popBackStack() }
+            )
+        }
+
+        // --- Edit Profile ---
         composable("edit_profile") {
             EditProfileScreen(
+                repository   = repository,
+                userId       = loggedInUserId,
                 currentName  = loggedInName,
                 currentEmail = loggedInEmail,
-                onSave       = { navController.popBackStack() },
+                onSave       = { newName, newEmail ->
+                    loggedInName  = newName
+                    loggedInEmail = newEmail
+                    navController.popBackStack()
+                },
                 onCancel     = { navController.popBackStack() }
+            )
+        }
+
+        // --- Admin Dashboard ---
+        composable("admin_dashboard") {
+            AdminDashboardScreen(
+                adminName  = loggedInName,
+                adminEmail = loggedInEmail,
+                token      = loggedInToken,
+                viewModel  = adminViewModel,
+                onNavigateToUserManagement  = { navController.navigate("admin_users") },
+                onNavigateToUserProfiles    = { navController.navigate("admin_profiles") },
+                onNavigateToSecurityMonitor = { navController.navigate("admin_security") },
+                onNavigateToScanRecords     = { navController.navigate("admin_scans") },
+                onNavigateToFlaggedLinks    = { navController.navigate("admin_flagged") },
+                onNavigateToAuditLog        = { navController.navigate("admin_audit") },
+                onNavigateToSubscriptions   = { navController.navigate("admin_subscriptions") },
+                onNavigateToSettings        = { navController.navigate("settings") },
+                onLogout = {
+                    scanViewModel.clearRecentScans()
+                    TokenManager.clearSession(context)
+                    loggedInName = ""; loggedInEmail = ""; loggedInPlan = "FREE"
+                    loggedInUserId = "00000000-0000-0000-0000-000000000000"
+                    loggedInToken = ""; loggedInRole = "user"
+                    navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                }
+            )
+        }
+
+        // --- Admin User Management ---
+        composable("admin_users") {
+            UserManagementScreen(
+                token     = loggedInToken,
+                viewModel = adminViewModel,
+                onUserClick = { userId ->
+                    navController.navigate("admin_user_detail/$userId")
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // --- Admin User Detail ---
+        composable(
+            route     = "admin_user_detail/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { back ->
+            val userId = back.arguments?.getString("userId") ?: ""
+            UserDetailScreen(
+                userId    = userId,
+                token     = loggedInToken,
+                viewModel = adminViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+
+        // --- Admin User Profiles ---
+        composable("admin_profiles") {
+            UserProfilesScreen(
+                token          = loggedInToken,
+                viewModel      = adminViewModel,
+                onProfileClick = { profileId ->
+                    navController.navigate("admin_profile_detail/$profileId")
+                },
+                onBack         = { navController.popBackStack() }
+            )
+        }
+
+        // --- Admin Profile Detail ---
+        composable(
+            route     = "admin_profile_detail/{profileId}",
+            arguments = listOf(navArgument("profileId") { type = NavType.StringType })
+        ) { back ->
+            val profileId = back.arguments?.getString("profileId") ?: ""
+            UserProfileDetailScreen(
+                profileId = profileId,
+                token     = loggedInToken,
+                viewModel = adminViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("admin_security") {
+            SecurityMonitorScreen(
+                token     = loggedInToken,
+                viewModel = adminViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("admin_scans") {
+            ScanRecordsScreen(
+                token     = loggedInToken,
+                viewModel = adminViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("admin_flagged") {
+            FlaggedLinksScreen(
+                token     = loggedInToken,
+                viewModel = adminViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("admin_audit") {
+            AuditLogScreen(
+                token     = loggedInToken,
+                viewModel = adminViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("admin_subscriptions") {
+            SubscriptionManagementScreen(
+                token       = loggedInToken,
+                viewModel   = adminViewModel,
+                onUserClick = { userId -> navController.navigate("admin_user_detail/$userId") },
+                onBack      = { navController.popBackStack() }
+            )
+        }
+
+        // --- Platform Manager Dashboard ---
+        composable("pm_dashboard") {
+            com.example.weblinkscanner.ui.screens.platform.PMDashboardScreen(
+                pmName    = loggedInName,
+                pmEmail   = loggedInEmail,
+                token     = loggedInToken,
+                viewModel = platformViewModel,
+                onNavigateToPlans     = { navController.navigate("pm_plans") },
+                onNavigateToAnalytics = { navController.navigate("pm_analytics") },
+                onNavigateToReports   = { navController.navigate("pm_reports") },
+                onNavigateToSupport   = { navController.navigate("pm_support") },
+                onNavigateToFaq       = { navController.navigate("pm_faq") },
+                onNavigateToHealth    = { navController.navigate("pm_health") },
+                onNavigateToSettings  = { navController.navigate("settings") },
+                onLogout = {
+                    TokenManager.clearSession(context)
+                    loggedInName = ""; loggedInEmail = ""; loggedInPlan = "FREE"
+                    loggedInUserId = "00000000-0000-0000-0000-000000000000"
+                    loggedInToken = ""; loggedInRole = "user"
+                    navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                }
+            )
+        }
+        composable("pm_plans") {
+            com.example.weblinkscanner.ui.screens.platform.PMSubscriptionPlansScreen(
+                token       = loggedInToken,
+                viewModel   = platformViewModel,
+                onPlanClick = { planId -> navController.navigate("pm_plan_detail/$planId") },
+                onBack      = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route     = "pm_plan_detail/{planId}",
+            arguments = listOf(navArgument("planId") { type = NavType.StringType })
+        ) { back ->
+            com.example.weblinkscanner.ui.screens.platform.PMPlanDetailScreen(
+                planId    = back.arguments?.getString("planId") ?: "",
+                token     = loggedInToken,
+                viewModel = platformViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("pm_analytics") {
+            com.example.weblinkscanner.ui.screens.platform.PMAnalyticsScreen(
+                token     = loggedInToken,
+                viewModel = platformViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("pm_reports") {
+            com.example.weblinkscanner.ui.screens.platform.PMReportsScreen(
+                token     = loggedInToken,
+                viewModel = platformViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("pm_support") {
+            com.example.weblinkscanner.ui.screens.platform.PMSupportScreen(
+                token           = loggedInToken,
+                viewModel       = platformViewModel,
+                onRequestClick  = { requestId -> navController.navigate("pm_support_detail/$requestId") },
+                onBack          = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route     = "pm_support_detail/{requestId}",
+            arguments = listOf(navArgument("requestId") { type = NavType.StringType })
+        ) { back ->
+            com.example.weblinkscanner.ui.screens.platform.PMSupportDetailScreen(
+                requestId = back.arguments?.getString("requestId") ?: "",
+                token     = loggedInToken,
+                viewModel = platformViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("pm_faq") {
+            com.example.weblinkscanner.ui.screens.platform.PMFaqScreen(
+                token     = loggedInToken,
+                viewModel = platformViewModel,
+                onBack    = { navController.popBackStack() }
+            )
+        }
+        composable("pm_health") {
+            com.example.weblinkscanner.ui.screens.platform.PMSystemHealthScreen(
+                token     = loggedInToken,
+                viewModel = platformViewModel,
+                onBack    = { navController.popBackStack() }
             )
         }
     }
 }
-
-

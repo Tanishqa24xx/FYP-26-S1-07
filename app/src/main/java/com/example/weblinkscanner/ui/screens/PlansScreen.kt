@@ -36,6 +36,7 @@ private val AmberBg     = Color(0xFFFEF3C7)
 @Composable
 fun PlansScreen(
     viewModel:      PlanViewModel,
+    userId:         String = "00000000-0000-0000-0000-000000000000",
     onUpgradeClick: (String) -> Unit,
     onBack:         () -> Unit
 ) {
@@ -43,12 +44,12 @@ fun PlansScreen(
     val plans   by viewModel.allPlans.collectAsState()
     val loading by viewModel.isLoading.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadMyPlan()
+    LaunchedEffect(userId) {
+        viewModel.loadMyPlan(userId)
         viewModel.loadAllPlans()
     }
 
-    val currentPlanName = myPlan?.planDetails?.name?.lowercase() ?: "free"
+    val currentPlanName = myPlan?.currentPlan?.lowercase() ?: "free"
 
     Box(
         modifier = Modifier

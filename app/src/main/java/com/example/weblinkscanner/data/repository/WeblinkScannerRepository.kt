@@ -1,3 +1,10 @@
+
+/*
+ This repository handles all our API calls to the FastAPI backend.
+ It's basically the middleman between the Retrofit client and our ViewModels.
+ Added some safeCall logic here to catch network errors and keep the app from crashing.
+*/
+
 package com.example.weblinkscanner.data.repository
 
 import com.example.weblinkscanner.data.api.NewRetrofitClient
@@ -28,8 +35,8 @@ class WeblinkScannerRepository(private val session: SessionStore) {
     suspend fun getAllPlans(): Result<AllPlansResponse> =
         safeCall { api.getAllPlans() }
 
-    suspend fun upgradePlan(newPlan: String): Result<UpgradePlanResponse> =
-        safeCall { api.upgradePlan(bearer(), UpgradePlanRequest(newPlan)) }
+    suspend fun upgradePlan(newPlan: String, userId: String): Result<UpgradePlanResponse> =
+        safeCall { api.upgradePlan(bearer(), userId, UpgradePlanRequest(newPlan)) }
 
     // --- Scanning ---
     suspend fun scanUrl(url: String, userId: String): Result<NewScanResponse> =
@@ -42,8 +49,8 @@ class WeblinkScannerRepository(private val session: SessionStore) {
         safeCall { api.scanQr(bearer(), QRScanRequest(rawQrData, userId)) }
 
     // --- Sandbox ---
-    suspend fun analyseSandbox(url: String, scanId: String): Result<SandboxReport> =
-        safeCall { api.analyseSandbox(bearer(), SandboxRequest(url, scanId)) }
+    suspend fun analyseSandbox(url: String, scanId: String, userId: String): Result<SandboxReport> =
+        safeCall { api.analyseSandbox(bearer(), userId, SandboxRequest(url, scanId, userId)) }
 
     // --- Saved Links ---
     suspend fun saveLink(userId: String, url: String, scanId: String?, riskLevel: String?): Result<Map<String, String>> =
@@ -82,6 +89,28 @@ class WeblinkScannerRepository(private val session: SessionStore) {
             } else emptyList()
         } catch (e: Exception) { emptyList() }
     }
+
+    // --- Rescan saved links (quota-aware) ---
+    suspend fun rescanSavedLinks(userId: String, force: Boolean = false, selectedIds: List<String> = emptyList()): Result<RescanResponse> =
+        safeCall { api.rescanSavedLinks(bearer(), userId, force, selectedIds) }
+
+    // --- Export scan history ---
+    suspend fun exportScanHistory(userId: String, fmt: String): Result<okhttp3.ResponseBody> =
+        safeCall { api.exportScanHistory(bearer(), userId, fmt) }
+
+    // --- Update profile ---
+    suspend fun updateProfile(userId: String, name: String, email: String): Result<Map<String, String>> =
+        safeCall { api.updateProfile(bearer(), UpdateProfileRequest(userId, name, email)) }
+
+    // --- User Support ---
+    suspend fun submitSupportRequest(userId: String, email: String, subject: String, message: String): Result<Map<String, String>> =
+        safeCall { api.submitSupportRequest(bearer(), CreateSupportRequest(userId, email, subject, message)) }
+
+    suspend fun getMySupportRequests(userId: String): Result<UserSupportListResponse> =
+        safeCall { api.getMySupportRequests(bearer(), userId) }
+
+    suspend fun userReplySupport(requestId: String, message: String, email: String): Result<Map<String, String>> =
+        safeCall { api.userReplySupport(bearer(), requestId, mapOf("message" to message, "sender_email" to email)) }
 
     // --- Generic safe call ---
     private suspend fun <T> safeCall(call: suspend () -> Response<T>): Result<T> =

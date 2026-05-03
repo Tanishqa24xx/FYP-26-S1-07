@@ -2,25 +2,66 @@
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from schemas import PlanInfo, UserPlanResponse
+from schemas import PlanInfo, UserPlanResponse, UpgradePlanRequest
 from database import supabase
 from datetime import date
 
 router = APIRouter()
 
 PLAN_CATALOGUE = [
-    PlanInfo(name="Free", price="$0/month", scan_limit="5 scans/day", features=["Manual URL scanning","Camera OCR scanning","Basic Risk Level Classification","Save Important Links","Standard Security Analysis","Sandbox Environment","Last 5 scans in History"]),
-    PlanInfo(name="Standard", price="$4.99/month", scan_limit="Unlimited scans", features=["Manual URL scanning","Camera OCR scanning","VirusTotal scan","Detailed Risk Level Classification","Save Important Links","Detailed Security Analysis","Alert Threshold Notification","Sandbox Environment","Last 30 days scan history"]),
-    PlanInfo(name="Premium", price="$9.99/month", scan_limit="Unlimited scans", features=["All Standard features","Advanced Multi-layer Security Analysis","Priority scanning","Full scan history","Export all reports"]),
+    PlanInfo(
+        name="Free", price="$0/month", scan_limit="5 scans/day",
+        features=[
+            "5 scans/day",
+            "Manual URL scanning",
+            "Camera OCR scanning",
+            "QR Code scanning",
+            "Basic Risk Classification (Safe/Suspicious/Dangerous)",
+            "Save scanned links",
+            "Last 5 scans in history",
+        ]
+    ),
+    PlanInfo(
+        name="Standard", price="$4.99/month", scan_limit="30 scans/day",
+        features=[
+            "30 scans/day",
+            "Manual URL scanning",
+            "Camera OCR scanning",
+            "QR Code scanning",
+            "Detailed Risk Classification",
+            "Standard Security Analysis",
+            "Sandbox environment analysis",
+            "Save scanned links",
+            "Browse & auto-scan mode",
+            "Share scan results",
+            "Adjustable warning strictness",
+            "Last 30 days scan history",
+            "Export history (CSV + PDF)",
+            "Scan limit notifications",
+        ]
+    ),
+    PlanInfo(
+        name="Premium", price="$9.99/month", scan_limit="Unlimited",
+        features=[
+            "Unlimited scans",
+            "Everything in Standard",
+            "Advanced Security Analysis",
+            "Ad-heavy website detection",
+            "Script & tracker detection",
+            "Full scan history (all time)",
+            "Export history (CSV + PDF)",
+        ]
+    ),
 ]
 
+# Retrieves specific plan details from our internal catalogue.
 def get_plan_details(plan_name: str) -> PlanInfo:
     for p in PLAN_CATALOGUE:
         if p.name.lower() == plan_name.lower():
             return p
     return PLAN_CATALOGUE[0]
 
-
+# Fetches the user's current subscription status and tracks their daily scan usage.
 @router.get("/")
 async def get_my_plan(user_id: str = Query(default="00000000-0000-0000-0000-000000000000")):
     GUEST_ID = "00000000-0000-0000-0000-000000000000"
@@ -30,22 +71,17 @@ async def get_my_plan(user_id: str = Query(default="00000000-0000-0000-0000-0000
 
     if user_id != GUEST_ID:
         try:
-            # Get plan info
-            user_result = supabase.table("users") \
+            # get user plan info
+            rows = supabase.table("users") \
                 .select("plan, daily_scan_limit") \
                 .eq("id", user_id) \
-                .single() \
-                .execute()
+                .execute().data or []
 
-            if user_result.data:
-                current_plan = user_result.data.get("plan", "free")
+            if rows:
+                current_plan = rows[0].get("plan", "free")
                 plan_lower = current_plan.lower()
-                if plan_lower in ("standard", "premium"):
-                    # Paid plans have unlimited scans - return a very large number
-                    # so the frontend progress bar and remaining counter stay meaningful
-                    daily_limit = 999999
-                else:
-                    daily_limit = user_result.data.get("daily_scan_limit") or 5
+                PLAN_LIMITS = {"free": 5, "standard": 30, "premium": 999999}
+                daily_limit = PLAN_LIMITS.get(plan_lower, 5)
 
             # Count today's scans from scan_records using UTC midnight
             from datetime import datetime, timezone
@@ -71,20 +107,24 @@ async def get_my_plan(user_id: str = Query(default="00000000-0000-0000-0000-0000
     )
     return JSONResponse(content=response.model_dump(by_alias=True))
 
-
+# Returns the full list of available subscription tiers and their respective features.
 @router.get("/all")
 async def get_all_plans():
     return {"plans": [p.model_dump() for p in PLAN_CATALOGUE]}
 
-
+# Handles the database update when a user chooses to switch their subscription plan.
 @router.post("/upgrade")
 async def upgrade_plan(
         user_id: str = Query(default="00000000-0000-0000-0000-000000000000"),
-        new_plan: str = "standard"
+        body: UpgradePlanRequest = None
 ):
+    new_plan = body.new_plan if body else "standard"
+    valid_plans = {"free", "standard", "premium"}
+    if new_plan.lower() not in valid_plans:
+        return {"message": f"Invalid plan '{new_plan}'", "new_plan": new_plan}
     try:
         if user_id != "00000000-0000-0000-0000-000000000000":
-            supabase.table("users").update({"plan": new_plan}).eq("id", user_id).execute()
+            supabase.table("users").update({"plan": new_plan.lower()}).eq("id", user_id).execute()
         return {"message": f"Plan upgraded to {new_plan}", "new_plan": new_plan}
     except Exception as e:
         return {"message": str(e), "new_plan": new_plan}

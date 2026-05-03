@@ -1,14 +1,43 @@
-# sandbox_router.py
+# routers/sandbox_router.py
 
 from fastapi import APIRouter
 from services.sandbox_service import run_sandbox
 from schemas import SandboxRequest, SandboxReport, SSLInfo, AsnInfo
 import uuid as uuid_lib
 from datetime import datetime, timezone
+from fastapi import HTTPException
+from database import supabase
+
 
 router = APIRouter()
 
+# Verifies if a user's assigned profile actually grants them permission to use the sandbox.
+def check_user_permission(user_id: str, permission: str):
+    GUEST_ID = "00000000-0000-0000-0000-000000000000"
+    if user_id == GUEST_ID:
+        return
+    try:
+        rows = supabase.table("users").select("profile_id").eq("id", user_id).execute().data or []
+        if not rows or not rows[0].get("profile_id"):
+            return
+        profile_id = rows[0]["profile_id"]
+        profile = supabase.table("user_profiles").select("permissions, status") \
+                      .eq("id", profile_id).execute().data or []
+        if not profile:
+            return
+        if profile[0].get("status") == "suspended":
+            raise HTTPException(status_code=403, detail="Your access profile has been suspended.")
+        permissions = profile[0].get("permissions") or []
+        if permission not in permissions:
+            raise HTTPException(status_code=403,
+                                detail=f"Your access profile does not allow '{permission}'.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
 
+
+# Converts the raw JSON data from our analysis engine into a structured report for the app.
 def build_report(report: dict, original_url: str) -> SandboxReport:
     ssl_raw = report.get("ssl_info")
     ssl_info = SSLInfo(
@@ -71,11 +100,23 @@ def build_report(report: dict, original_url: str) -> SandboxReport:
         sandbox_uuid   = report.get("sandbox_uuid"),
 
         analysis_source = report.get("analysis_source"),
+
+        # Premium: ad/tracker detection
+        detected_ad_tech   = report.get("detected_ad_tech",   []),
+        detected_trackers  = report.get("detected_trackers",  []),
+        suspicious_scripts = report.get("suspicious_scripts", []),
+        ad_heavy           = report.get("ad_heavy",           False),
     )
 
 
+# Runs a URL inside an isolated environment to safely check for threats and tracking behavior.
 @router.post("/analyse", response_model=SandboxReport)
 async def analyse_sandbox(body: SandboxRequest):
+    try:
+        check_user_permission(body.user_id, "sandbox_analyse")  # fix: user_id not scan_id
+    except HTTPException:
+        raise  # let 403 propagate properly
+
     try:
         report = await run_sandbox(body.url)
         return build_report(report, body.url)

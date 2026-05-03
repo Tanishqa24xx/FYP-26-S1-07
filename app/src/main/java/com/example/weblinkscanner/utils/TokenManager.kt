@@ -1,3 +1,9 @@
+/*
+ This is where we handle the login session and user details.
+ We use SharedPreferences to keep the token and user info handy across the app
+ so the user doesn't have to log in every single time they open it.
+ */
+
 package com.example.weblinkscanner.utils
 
 import android.content.Context
@@ -12,6 +18,7 @@ object TokenManager {
     private const val KEY_EMAIL = "user_email"
     private const val KEY_PLAN = "user_plan"
     private const val KEY_USER_ID = "user_id"
+    private const val KEY_ROLE    = "user_role"
     private const val SESSION_DURATION = 7 * 24 * 60 * 60 * 1000L // 7 days
 
     private fun prefs(context: Context): SharedPreferences =
@@ -20,11 +27,12 @@ object TokenManager {
     // --- Save full session ---
     fun saveSession(
         context: Context,
-        token: String,
-        name: String,
-        email: String,
-        plan: String,
-        userId: String
+        token:   String,
+        name:    String,
+        email:   String,
+        plan:    String,
+        userId:  String,
+        role:    String = "user"
     ) {
         val expiry = System.currentTimeMillis() + SESSION_DURATION
         prefs(context).edit()
@@ -34,10 +42,11 @@ object TokenManager {
             .putString(KEY_EMAIL,   email)
             .putString(KEY_PLAN,    plan)
             .putString(KEY_USER_ID, userId)
+            .putString(KEY_ROLE,    role)
             .apply()
     }
 
-    // Keep backward compat
+    // --- Keep backward compat ---
     fun saveToken(context: Context, token: String) {
         val expiry = System.currentTimeMillis() + SESSION_DURATION
         prefs(context).edit()
@@ -62,12 +71,13 @@ object TokenManager {
     fun getSavedEmail(context: Context): String = prefs(context).getString(KEY_EMAIL,   "") ?: ""
     fun getSavedPlan(context: Context): String = prefs(context).getString(KEY_PLAN,    "FREE") ?: "FREE"
     fun getSavedUserId(context: Context): String = prefs(context).getString(KEY_USER_ID, "00000000-0000-0000-0000-000000000000") ?: "00000000-0000-0000-0000-000000000000"
+    fun getSavedRole(context: Context):   String = prefs(context).getString(KEY_ROLE,    "user") ?: "user"
 
     // --- Clear on logout ---
     fun clearSession(context: Context) {
         prefs(context).edit().clear().apply()
     }
 
-    // Keep backward compat
+    // --- Keep backward compat ---
     fun clearToken(context: Context) = clearSession(context)
 }

@@ -25,9 +25,10 @@ import androidx.compose.ui.unit.sp
 import com.example.weblinkscanner.data.repository.WeblinkScannerRepository
 import com.example.weblinkscanner.viewmodel.ScanViewModel
 import com.example.weblinkscanner.utils.WarningStrictnessManager
+import com.example.weblinkscanner.utils.ScanLimitNotificationManager
 import kotlinx.coroutines.launch
 
-// --- Colors ---
+
 private val Blue600     = Color(0xFF2563EB)
 private val Blue50      = Color(0xFFEFF6FF)
 private val Blue100     = Color(0xFFDBEAFE)
@@ -74,6 +75,12 @@ fun ScanResultScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val isPaidPlan  = userPlan.lowercase() in listOf("standard", "premium")
+    val isStandardPlan = userPlan.lowercase() == "standard"
+    val hasLimit       = !isPaidPlan || isStandardPlan  // free and standard have limits
+    val hasLimitPlan   = userPlan.lowercase() in listOf("free", "standard")
+    val notifEnabled   = ScanLimitNotificationManager.isEnabled(
+        LocalContext.current, userId
+    )
     val strictness  = WarningStrictnessManager.get(LocalContext.current, userId)
 
     var bannerDismissed by remember { mutableStateOf(false) }
@@ -109,7 +116,7 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(52.dp))
 
-            // --- Header ---
+            // Header
             Box(
                 modifier = Modifier
                     .size(64.dp)
@@ -128,9 +135,9 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // --- Scans remaining banner ---
+            // Scans remaining banner
             AnimatedVisibility(
-                visible = remaining != null && !bannerDismissed,
+                visible = remaining != null && !bannerDismissed && hasLimitPlan && notifEnabled,
                 enter   = slideInVertically() + fadeIn(),
                 exit    = slideOutVertically() + fadeOut()
             ) {
@@ -186,7 +193,7 @@ fun ScanResultScreen(
                 }
             }
 
-            // --- Verdict card ---
+            // Verdict card
             Card(
                 modifier  = Modifier
                     .fillMaxWidth()
@@ -212,7 +219,7 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(10.dp))
 
-            // --- Scanned URL card with final destination for paid plans ---
+            // Scanned URL card with final destination for paid plans
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -267,7 +274,7 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(10.dp))
 
-            // --- Why this result card ---
+            // Why this result card
             // For SAFE: show a clean confirmation (reasons are noise at this verdict).
             // For SUSPICIOUS / DANGEROUS: show the full list of signals.
             if (scan.riskLevel.uppercase() == "SAFE") {
@@ -330,40 +337,61 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // --- Action buttons ---
+            // Action buttons
 
-            Button(
-                onClick  = { onSecurityAnalysisClick(
-                    scan.url ?: "",
-                    scan.scanId,
-                    scan.riskLevel,
-                    scan.threatCategories.joinToString(",")
-                ) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
-            ) {
-                Icon(Icons.Default.Security, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("View Security Analysis", fontWeight = FontWeight.SemiBold)
+            if (isPaidPlan) {
+                // Security Analysis: Standard & Premium only
+                Button(
+                    onClick = { onSecurityAnalysisClick(
+                        scan.url ?: "", scan.scanId,
+                        scan.riskLevel, scan.threatCategories.joinToString(",")
+                    ) },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape    = RoundedCornerShape(14.dp),
+                    colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
+                ) {
+                    Icon(Icons.Default.Security, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("View Security Analysis", fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                Button(
+                    onClick = { onSandboxClick(scan.url ?: "", scan.scanId) },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape    = RoundedCornerShape(14.dp),
+                    colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
+                ) {
+                    Icon(Icons.Default.OpenInBrowser, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Open Link in Sandbox", fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(Modifier.height(10.dp))
+            } else {
+                // Free user: show upgrade prompt instead
+                Card(
+                    modifier  = Modifier.fillMaxWidth(),
+                    shape     = RoundedCornerShape(14.dp),
+                    colors    = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lock, null, tint = TextMuted, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Security Analysis & Sandbox",
+                                fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                            Text("Upgrade to Standard or Premium to access detailed security checks and sandbox analysis.",
+                                fontSize = 12.sp, color = TextMuted, lineHeight = 18.sp)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
             }
 
-            Spacer(Modifier.height(10.dp))
-
-            Button(
-                onClick  = { onSandboxClick(scan.url ?: "", scan.scanId) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = Blue600)
-            ) {
-                Icon(Icons.Default.OpenInBrowser, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Open Link in Sandbox", fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            // --- Share button (Standard and Premium only) ---
+            // Share button (Standard and Premium only)
             if (isPaidPlan) {
                 OutlinedButton(
                     onClick = {
@@ -394,7 +422,7 @@ fun ScanResultScreen(
                 Spacer(Modifier.height(10.dp))
             }
 
-            // --- Save Link button ---
+            // Save Link button
             val saveColor = when (saveStatus) {
                 "saved"   -> SafeGreen
                 "already" -> WarnOrange

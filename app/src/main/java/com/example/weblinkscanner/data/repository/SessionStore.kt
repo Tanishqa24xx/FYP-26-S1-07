@@ -1,3 +1,7 @@
+
+ // SessionStore manages the persistence of user authentication tokens
+ // using Jetpack DataStore Preferences.
+
 package com.example.weblinkscanner.data.repository
 
 import android.content.Context

@@ -47,11 +47,11 @@ class PlanViewModel(private val repository: WeblinkScannerRepository) : ViewMode
         }
     }
 
-    fun upgradePlan(plan: String) {
+    fun upgradePlan(plan: String, userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            when (val result = repository.upgradePlan(plan)) {
-                is Result.Success -> { /* reload handled by caller */ }
+            when (val result = repository.upgradePlan(plan, userId)) {
+                is Result.Success -> loadMyPlan(userId)  // reload so UI reflects new plan immediately
                 is Result.Error -> _errorMessage.value = result.message
             }
             _isLoading.value = false

@@ -14,7 +14,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.WeblinkScanner">
+        android:theme="@style/Theme.WeblinkScanner"
+        android:usesCleartextTraffic="true">
 
         <!--  MainActivity is the entry point — handles all navigation -->
         <activity
@@ -25,11 +26,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <!-- Sign Up activity -->
-        <activity
-            android:name=".ui.screens.LoginActivity"
-            android:exported="false" />
 
     </application>
 

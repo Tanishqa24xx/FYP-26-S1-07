@@ -5,6 +5,7 @@ from database import supabase
 
 router = APIRouter(prefix="/faq", tags=["FAQ"])
 
+# Grabs all the active help questions from Supabase and sorts them by our custom order.
 @router.get("/")
 def get_faqs():
     try:

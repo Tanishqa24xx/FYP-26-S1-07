@@ -62,6 +62,7 @@ class AsnInfo(BaseModel):
 class SandboxRequest(BaseModel):
     url: str
     scan_id: str
+    user_id: Optional[str] = "00000000-0000-0000-0000-000000000000"
 
 class SandboxReport(BaseModel):
     sandbox_id:   str
@@ -115,8 +116,15 @@ class SandboxReport(BaseModel):
 
     analysis_source: Optional[str] = None
 
+    # Premium enrichment - ad/tracker/script analysis
+    detected_ad_tech:   List[str] = []
+    detected_trackers:  List[str] = []
+    suspicious_scripts: List[str] = []
+    ad_heavy:           bool      = False
 
-# --- PLANS: using camelCase aliases to match Android ApiModels ---
+
+
+# --- PLANS ---
 
 class PlanInfo(BaseModel):
     name: str
@@ -157,3 +165,15 @@ class SavedLinkItem(BaseModel):
 
 class SavedLinksResponse(BaseModel):
     links: List[SavedLinkItem]
+
+
+# --- Rescan saved links ---
+
+class RescanResponse(BaseModel):
+    message:       str
+    quota_warning: bool = False
+    remaining:     int  = 0
+    total:         int  = 0
+    scanned:       int  = 0
+    updated:       int  = 0
+    skipped:       int  = 0

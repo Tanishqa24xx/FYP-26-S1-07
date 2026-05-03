@@ -51,7 +51,8 @@ data class QRScanResponse(
 
 data class SandboxRequest(
     val url: String,
-    @SerializedName("scan_id") val scanId: String
+    @SerializedName("scan_id") val scanId: String,
+    @SerializedName("user_id") val userId: String = "00000000-0000-0000-0000-000000000000"
 )
 
 data class SslInfo(
@@ -120,7 +121,13 @@ data class SandboxReport(
     @SerializedName("report_url") val reportUrl: String?,
     @SerializedName("sandbox_uuid") val sandboxUuid: String?,
 
-    @SerializedName("analysis_source") val analysisSource: String?
+    @SerializedName("analysis_source") val analysisSource: String?,
+
+    // Premium - ad/tracker/script analysis
+    @SerializedName("detected_ad_tech") val detectedAdTech: List<String> = emptyList(),
+    @SerializedName("detected_trackers") val detectedTrackers: List<String> = emptyList(),
+    @SerializedName("suspicious_scripts") val suspiciousScripts: List<String> = emptyList(),
+    @SerializedName("ad_heavy") val adHeavy: Boolean = false
 )
 
 // --- PLANS ---
@@ -189,4 +196,59 @@ data class RecheckResultItem(
 data class RecheckResponse(
     val results: List<RecheckResultItem>,
     val errors: List<String> = emptyList()
+)
+
+
+// --- Rescan ---
+
+data class RescanResponse(
+    val message: String,
+    @SerializedName("quota_warning") val quotaWarning: Boolean = false,
+    val remaining: Int = 0,
+    val total: Int = 0,
+    val scanned: Int = 0,
+    val updated: Int = 0,
+    val skipped: Int = 0
+)
+
+// --- Update Profile ---
+
+data class UpdateProfileRequest(
+    @SerializedName("user_id") val userId: String,
+    val name: String,
+    val email: String
+)
+
+// --- USER SUPPORT / REPORT ---
+
+data class CreateSupportRequest(
+    @SerializedName("user_id") val userId:  String,
+    val email: String,
+    val subject: String,
+    val message: String
+)
+
+data class SupportReply(
+    val id: String,
+    @SerializedName("request_id") val requestId: String,
+    val message: String,
+    @SerializedName("sender_type") val senderType: String,
+    @SerializedName("sender_email") val senderEmail: String?,
+    @SerializedName("created_at") val createdAt: String?
+)
+
+data class UserSupportRequest(
+    val id: String,
+    @SerializedName("user_id") val userId: String,
+    val email: String?,
+    val subject: String,
+    val message: String,
+    val status: String,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?,
+    val replies: List<SupportReply> = emptyList()
+)
+
+data class UserSupportListResponse(
+    val requests: List<UserSupportRequest>
 )

@@ -5,5 +5,6 @@ data class LoginResponse(
     val user: String?,
     val name: String?,
     val plan: String?,
-    val user_id: String?       // ← added
+    val user_id: String?,
+    val role: String?
 )

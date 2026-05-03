@@ -1,7 +1,5 @@
 # scan_service.py
-#
-# DECISION FRAMEWORK
-# ------------------
+
 # Layer 1 - Live threat feeds (URLhaus + PhishTank)
 #            Run first, always. If either flags the URL -> DANGEROUS, stop.
 #            These are authoritative external databases - they override everything.
@@ -9,16 +7,10 @@
 # Layer 2 - Heuristic engine (structural URL analysis)
 #            Runs when Layer 1 is clean.
 #            Score >= 40 -> DANGEROUS, >= 20 -> SUSPICIOUS, < 20 -> SAFE
-#            If verdict is DANGEROUS, stop - skip the trusted domain check.
 #
-# Layer 3 - Trusted domain check (Cisco Umbrella top-1M, refreshed daily)
-#            Runs ONLY when verdict so far is SAFE or SUSPICIOUS.
-#            If the registrable domain is in the Umbrella top-50k AND uses HTTPS
-#            → override to SAFE (suppresses heuristic false positives).
-#            A DANGEROUS verdict from Layer 2 is NEVER overridden here.
-#
-# KEY INVARIANT: URLhaus/PhishTank always run first and always win.
-#                Trusted domain status cannot rescue a confirmed malware URL.
+# Layer 3 - Trusted domain check (Cisco Umbrella top-1M)
+#           Runs ONLY when verdict so far is SAFE or SUSPICIOUS.
+#           Used to suppress false positives on reputable sites.
 
 import re
 import io
@@ -30,8 +22,8 @@ from urllib.parse import urlparse, parse_qs
 from config import settings
 
 # --- Cache TTLs ---
-CACHE_TTL = 3600     # 1 hour  - keywords, TLDs
-UMBRELLA_CACHE_TTL = 86400    # 24 hours - Umbrella top-1M (published daily)
+CACHE_TTL = 3600     # 1 hour for keywords, TLDs
+UMBRELLA_CACHE_TTL = 86400    # 24 hours for the Umbrella list (it only updates daily)
 UMBRELLA_TOP_N = 50_000   # keep only the top 50k from the full 1M list
 
 # --- Runtime caches ---
@@ -62,7 +54,7 @@ free_subdomain_cache: list = []
 free_subdomain_cache_ts: float = 0.0
 
 # --- Fallback seeds ---
-# Used ONLY when live fetches are completely unreachable.
+# Hardcoded defaults used if the live fetchers are down or unreachable.
 
 KEYWORD_SEED = [
     "login", "verify", "bank", "account", "secure", "password",
@@ -78,8 +70,6 @@ TLD_SEED = [
     ".icu", ".cyou", ".buzz", ".cfd", ".monster", ".stream",
 ]
 
-# Fallback SQLi patterns. subset of OWASP CRS REQUEST-942 rule set.
-# Used only when the live OWASP CRS fetch is unreachable.
 # Source (live): https://raw.githubusercontent.com/coreruleset/coreruleset/main/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
 SQLI_SEED = [
     r"(union\s+select|select\s+.+\s+from|insert\s+into|drop\s+table"
@@ -89,7 +79,6 @@ SQLI_SEED = [
     r"(benchmark\s*\(|sleep\s*\(|waitfor\s+delay)",
 ]
 
-# Fallback XSS patterns. subset of OWASP CRS REQUEST-941 rule set.
 # Source (live): https://raw.githubusercontent.com/coreruleset/coreruleset/main/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
 XSS_SEED = [
     r"<\s*script",
@@ -101,7 +90,6 @@ XSS_SEED = [
     r"<\s*(iframe|object|embed|svg|math|video|audio|base)",
 ]
 
-# Fallback double extension pairs (sourced from OWASP CRS and MITRE ATT&CK T1036).
 # Source (live): OWASP CRS REQUEST-932-APPLICATION-ATTACK-RCE.conf
 DOUBLE_EXT_SEED = [
     (r"pdf", r"exe"), (r"doc", r"exe"), (r"xls", r"exe"), (r"jpg", r"exe"),
@@ -110,9 +98,7 @@ DOUBLE_EXT_SEED = [
     (r"doc", r"zip"), (r"jpg", r"php"), (r"txt", r"exe"), (r"gif", r"exe"),
 ]
 
-# Fallback free subdomain service suffixes.
 # Source (live): URLhaus malware domain feed - https://urlhaus.abuse.ch/downloads/text_online/
-# The live feed gives us actual abused domains; these seeds cover well-known DDNS providers.
 FREE_SUBDOMAIN_SEED = [
     ".ddns.net", ".hopto.org", ".zapto.org", ".sytes.net", ".duckdns.org",
     ".afraid.org", ".mooo.com", ".noip.me", ".servebeer.com", ".serveblog.net",
@@ -123,7 +109,6 @@ FREE_SUBDOMAIN_SEED = [
     ".myvnc.com", ".dynamic-dns.net", ".changeip.com", ".in.net",
 ]
 
-# Critical domains kept as last-resort fallback if Umbrella download fails.
 TRUSTED_SEED = {
     "google.com", "googleapis.com", "youtube.com",
     "microsoft.com", "microsoftonline.com", "live.com",
@@ -150,11 +135,9 @@ CCSLDS = {
 
 # --- Domain helpers ---
 
+# Extracts the apex domain (e.g., 'google.com') from a sub-domain.
+# We handle specific cases like '.co.uk' or brand TLDs like '.aws' manually.
 def get_registrable_domain(domain: str) -> str:
-    """
-    Extracts the registrable (apex) domain from a hostname.
-    Handles brand TLDs (.aws, .google …) and common ccSLDs (.co.uk …).
-    """
     parts = domain.lower().split(".")
     if len(parts) < 2:
         return domain
@@ -167,16 +150,9 @@ def get_registrable_domain(domain: str) -> str:
 
 
 # --- Umbrella trusted domain list ---
-
+# Downloads the Cisco Umbrella top-1M list.
+# This is a massive file, so we zip-parse it in memory and cache it for a full day.
 async def fetch_trusted_domains() -> set:
-    """
-    Downloads the Cisco Umbrella top-1M CSV (free, no API key, updated daily).
-    Keeps the top UMBRELLA_TOP_N entries as registrable domains.
-    Cached for 24 hours. Falls back to TRUSTED_SEED if unreachable.
-
-    Source: http://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip
-    Format: rank,domain  (e.g.  1,google.com)
-    """
     global umbrella_cache, umbrella_cache_ts
     now = time.time()
     if umbrella_cache and (now - umbrella_cache_ts) < UMBRELLA_CACHE_TTL:
@@ -205,15 +181,9 @@ async def fetch_trusted_domains() -> set:
         print(f"[Umbrella] Fetch failed: {e}", flush=True)
     return umbrella_cache if umbrella_cache else TRUSTED_SEED
 
-
+# Returns True when the URL uses HTTPS AND its registrable domain is in the Cisco Umbrella top-50k list.
+# HTTP URLs are never trusted - even on well-known domains.
 async def is_trusted(url: str) -> bool:
-    """
-    Returns True when the URL uses HTTPS AND its registrable domain is in
-    the Cisco Umbrella top-50k list.
-    HTTP URLs are never trusted - even on well-known domains.
-
-    NOTE: This function is async (it awaits fetch_trusted_domains).
-    """
     if not url.lower().startswith("https://"):
         return False
     parsed = urlparse(url)
@@ -224,13 +194,9 @@ async def is_trusted(url: str) -> bool:
 
 
 # --- Live keyword and TLD fetchers ---
-
+# Fetches live phishing/malware keyword tags from URLhaus (abuse.ch).
+# Refreshed every hour.
 async def fetch_keywords() -> list:
-    """
-    Fetches live phishing/malware keyword tags from URLhaus (abuse.ch).
-    Refreshed every hour. Falls back to KEYWORD_SEED if unreachable.
-    Source: https://urlhaus-api.abuse.ch/v1/
-    """
     global keyword_cache, keyword_cache_ts
     now = time.time()
     if keyword_cache and (now - keyword_cache_ts) < CACHE_TTL:
@@ -259,13 +225,9 @@ async def fetch_keywords() -> list:
         print(f"[URLhaus keywords] Fetch failed: {e}", flush=True)
     return keyword_cache if keyword_cache else KEYWORD_SEED
 
-
+# Fetches the Spamhaus most-abused TLD list.
+# Refreshed every hour.
 async def fetch_suspicious_tlds() -> list:
-    """
-    Fetches the Spamhaus most-abused TLD list.
-    Refreshed every hour. Falls back to TLD_SEED if unreachable.
-    Source: https://www.spamhaus.org/statistics/tlds/
-    """
     global tld_cache, tld_cache_ts
     now = time.time()
     if tld_cache and (now - tld_cache_ts) < CACHE_TTL:
@@ -292,14 +254,8 @@ async def fetch_suspicious_tlds() -> list:
 
 
 # --- Live pattern fetchers (OWASP CRS + URLhaus domain feed) ---
-
+# Fetches SQL injection regex patterns from the OWASP Core Rule Set (CRS).
 async def fetch_sqli_patterns() -> list:
-    """
-    Fetches SQL injection regex patterns from the OWASP Core Rule Set (CRS).
-    The CRS is the industry-standard WAF ruleset maintained by OWASP.
-    Source: https://raw.githubusercontent.com/coreruleset/coreruleset/main/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
-    Falls back to SQLI_SEED if unreachable.
-    """
     global sqli_patterns_cache, sqli_patterns_cache_ts
     now = time.time()
     if sqli_patterns_cache and (now - sqli_patterns_cache_ts) < PATTERN_CACHE_TTL:
@@ -330,13 +286,8 @@ async def fetch_sqli_patterns() -> list:
         print(f"[OWASP CRS SQLi] Fetch failed: {e}", flush=True)
     return sqli_patterns_cache if sqli_patterns_cache else SQLI_SEED
 
-
+# Fetches XSS detection regex patterns from the OWASP Core Rule Set (CRS).
 async def fetch_xss_patterns() -> list:
-    """
-    Fetches XSS detection regex patterns from the OWASP Core Rule Set (CRS).
-    Source: https://raw.githubusercontent.com/coreruleset/coreruleset/main/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
-    Falls back to XSS_SEED if unreachable.
-    """
     global xss_patterns_cache, xss_patterns_cache_ts
     now = time.time()
     if xss_patterns_cache and (now - xss_patterns_cache_ts) < PATTERN_CACHE_TTL:
@@ -365,15 +316,9 @@ async def fetch_xss_patterns() -> list:
         print(f"[OWASP CRS XSS] Fetch failed: {e}", flush=True)
     return xss_patterns_cache if xss_patterns_cache else XSS_SEED
 
-
+# Fetches double-extension masking pairs from the OWASP CRS RCE ruleset.
+#     Covers filenames like report.pdf.exe - a classic malware delivery technique
 async def fetch_double_ext_pairs() -> list:
-    """
-    Fetches double-extension masking pairs from the OWASP CRS RCE ruleset.
-    Covers filenames like report.pdf.exe - a classic malware delivery technique
-    documented in MITRE ATT&CK T1036.007 (Masquerading: Double File Extension).
-    Source: https://raw.githubusercontent.com/coreruleset/coreruleset/main/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
-    Falls back to DOUBLE_EXT_SEED if unreachable.
-    """
     global double_ext_cache, double_ext_cache_ts
     now = time.time()
     if double_ext_cache and (now - double_ext_cache_ts) < PATTERN_CACHE_TTL:
@@ -402,19 +347,8 @@ async def fetch_double_ext_pairs() -> list:
         print(f"[OWASP CRS DoubleExt] Fetch failed: {e}", flush=True)
     return double_ext_cache if double_ext_cache else DOUBLE_EXT_SEED
 
-
+# Fetches the URLhaus malware domain feed to identify free subdomain services actively being abused by attackers at this moment.
 async def fetch_free_subdomain_services() -> list:
-    """
-    Fetches the URLhaus malware domain feed to identify free subdomain services actively being abused by attackers at this moment.
-    Source: https://urlhaus.abuse.ch/downloads/text_online/
-    This feed lists URLs currently distributing malware - updated every 5 minutes.
-    No API key required. Abuse.ch explicitly allows automated consumption.
-    Cached for 1 hour. Falls back to FREE_SUBDOMAIN_SEED if unreachable.
-
-    Strategy: extract the suffix of each domain in the feed (e.g., ".ddns.net",
-    ".hopto.org"). Suffixes that appear 3+ times are likely free DDNS services
-    being abused - add them to the live blocklist.
-    """
     global free_subdomain_cache, free_subdomain_cache_ts
     now = time.time()
     if free_subdomain_cache and (now - free_subdomain_cache_ts) < CACHE_TTL:
@@ -463,25 +397,8 @@ async def fetch_free_subdomain_services() -> list:
 
 
 # --- Layer 1: URLhaus ---
-
+# Checks URLhaus for both the exact URL and the host.
 async def check_urlhaus(url: str):
-    """
-    Checks URLhaus for both the exact URL and the host.
-
-    Two separate lookups run concurrently:
-      /url/  - exact URL match (catches specific malware distribution paths)
-      /host/ - host-level match (catches all malware hosted on a domain)
-
-    Status values that indicate a threat:
-      URL  lookup: "is_active" (currently distributing) OR "was_active" (confirmed past)
-      HOST lookup: "is_active" OR "was_active" (host was confirmed malware server)
-
-    Returns a threat description string, or None if clean or API unreachable.
-    When the API is unreachable, None is returned - the caller must NOT treat
-    this as confirmation of safety. Heuristics will still run as a fallback.
-
-    Source: https://urlhaus-api.abuse.ch/v1/
-    """
     parsed = urlparse(url if "://" in url else "https://" + url)
     host = parsed.netloc or parsed.path
 
@@ -542,12 +459,8 @@ async def check_urlhaus(url: str):
 
 
 # --- Layer 1: PhishTank ---
-
+# Checks PhishTank for confirmed phishing pages.
 async def check_phishtank(url: str) -> bool:
-    """
-    Checks PhishTank for confirmed phishing pages.
-    Source: https://www.phishtank.com/developer_info.php
-    """
     try:
         async with httpx.AsyncClient(timeout=8) as client:
             resp = await client.post(
@@ -568,13 +481,10 @@ async def check_phishtank(url: str) -> bool:
 
 
 # --- Layer 2: Heuristic engine ---
-
+# Structural URL analysis. All reference data comes from live external sources.
+# Returns (score: int, categories: list[str])
+# Thresholds: >= 40 DANGEROUS  |  >= 20 SUSPICIOUS  |  < 20 SAFE
 async def heuristic_check(url: str) -> tuple:
-    """
-    Structural URL analysis. All reference data comes from live external sources.
-    Returns (score: int, categories: list[str])
-    Thresholds: >= 40 DANGEROUS  |  >= 20 SUSPICIOUS  |  < 20 SAFE
-    """
     score = 0
     categories = []
     url_lower = url.lower()
@@ -748,7 +658,7 @@ async def heuristic_check(url: str) -> tuple:
 
     # Signal 16: Direct binary or archive file download in URL path
     # Three tiers of suspicion:
-    #   Tier A (+35): Executable files (.exe, .msi, .bat …) anywhere in path
+    #   Tier A (+35): Executable files (.exe, .msi, .bat ...) anywhere in path
     #   Tier B (+40): Archive files in a known download/release subpath
     #   Tier C (+30): Archive files anywhere in the path (catches CDN-hosted zips
     #                 like /leuxtrogxre_x64.zip on oss/cloud storage hosts)
@@ -782,22 +692,27 @@ async def heuristic_check(url: str) -> tuple:
 
 
 # --- Main scan entry point ---
-
+# Layer 1: URLhaus + PhishTank - run first, always, results are final.
+# Layer 2: Heuristics - run when Layer 1 is clean.
+#          If heuristics → DANGEROUS, stop. Trusted domain cannot save it.
+# Layer 3: Trusted domain check - run only when verdict is SAFE or SUSPICIOUS.
+#          If trusted, override to SAFE (suppresses heuristic false positives).
+#          Never runs when verdict is already DANGEROUS.
+#
 async def perform_scan(url: str) -> dict:
-    """
-    Layer 1: URLhaus + PhishTank - run first, always, results are final.
-    Layer 2: Heuristics - run when Layer 1 is clean.
-             If heuristics → DANGEROUS, stop. Trusted domain cannot save it.
-    Layer 3: Trusted domain check - run only when verdict is SAFE or SUSPICIOUS.
-             If trusted, override to SAFE (suppresses heuristic false positives).
-             Never runs when verdict is already DANGEROUS.
-    """
-
     # --- Layer 1 ---
     urlhaus_result, phishtank_flagged = await asyncio.gather(
         check_urlhaus(url),
         check_phishtank(url),
     )
+
+    # Offline host from URLhaus. was confirmed malicious, now offline.
+    # Treat as SUSPICIOUS regardless of heuristics score.
+    urlhaus_offline = False
+    if urlhaus_result and urlhaus_result.startswith("__offline__"):
+        urlhaus_offline = True
+        offline_detail  = urlhaus_result[len("__offline__"):]
+        urlhaus_result  = None  # don't trigger DANGEROUS
 
     if urlhaus_result:
         return build_result(
@@ -826,10 +741,19 @@ async def perform_scan(url: str) -> dict:
     # --- Layer 2: Heuristics ---
     score, categories = await heuristic_check(url)
 
+    # Inject offline URLhaus signal into categories, guarantees at least SUSPICIOUS
+    if urlhaus_offline:
+        score = max(score, 25)  # floor at SUSPICIOUS threshold
+        categories = [
+                         f"Previously confirmed malware host (URLhaus): {offline_detail}",
+                         "All known malicious URLs on this host are currently offline, "
+                         "but the host has a confirmed history of malware distribution.",
+                     ] + categories
+
     if score >= 40:
         heuristic_verdict = "DANGEROUS"
 
-        # DANGEROUS from heuristics - do NOT check trusted domain.
+        # when DANGEROUS from heuristics, do not check trusted domain.
         # A high-scoring malicious URL is not made safe by appearing on a
         # popular hosting platform.
 

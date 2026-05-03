@@ -46,33 +46,36 @@ private data class PlanOption(
 
 private val PLAN_OPTIONS = listOf(
     PlanOption(
-        id    = "standard",
-        name  = "Standard",
-        price = "\$4.99/month",
-        color = Blue600,
-        bg    = Blue50,
+        id = "free", name = "Free", price = "\$0/month",
+        color = Color(0xFF64748B), bg = Color(0xFFF1F5F9),
         features = listOf(
-            "Unlimited scans",
-            "VirusTotal scan",
-            "Detailed Risk Classification",
-            "Detailed Security Analysis",
-            "Alert Threshold Notification",
-            "Last 30 days scan history"
+            "5 scans/day",
+            "Manual URL, Camera & QR scanning",
+            "Basic Risk Classification",
+            "Save Important Links",
+            "Last 5 scans in history"
         )
     ),
     PlanOption(
-        id    = "premium",
-        name  = "Premium",
-        price = "\$9.99/month",
-        color = Blue600,
-        bg    = Blue50,
+        id = "standard", name = "Standard", price = "\$4.99/month",
+        color = Blue600, bg = Blue50,
         features = listOf(
+            "30 scans/day",
+            "Standard Security Analysis",
+            "Sandbox Environment",
+            "Browse & auto-scan mode",
+            "Last 30 days history + Export"
+        )
+    ),
+    PlanOption(
+        id = "premium", name = "Premium", price = "\$9.99/month",
+        color = Blue600, bg = Blue50,
+        features = listOf(
+            "Unlimited scans",
             "Everything in Standard",
-            "Advanced Multi-layer Analysis",
-            "Priority scanning",
-            "Full scan history",
-            "Export all reports",
-            "Ad-intensive website warnings"
+            "Advanced Security Analysis",
+            "Ad-heavy & tracker detection",
+            "Full history + Export"
         )
     )
 )
@@ -80,6 +83,7 @@ private val PLAN_OPTIONS = listOf(
 @Composable
 fun UpgradePlanScreen(
     viewModel: PlanViewModel,
+    userId: String = "00000000-0000-0000-0000-000000000000",
     preSelectedPlan: String = "standard",
     onBack: () -> Unit
 ) {
@@ -117,7 +121,7 @@ fun UpgradePlanScreen(
                 Icon(Icons.Default.ArrowUpward, null, tint = Blue600, modifier = Modifier.size(32.dp))
             }
             Spacer(Modifier.height(12.dp))
-            Text("Upgrade Plan", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Blue600)
+            Text("Change Plan", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Blue600)
             Text("Currently on $currentPlan plan", fontSize = 14.sp, color = TextMuted)
             Spacer(Modifier.height(24.dp))
 
@@ -235,7 +239,7 @@ fun UpgradePlanScreen(
             // Confirm button
             Button(
                 onClick = {
-                    viewModel.upgradePlan(selectedPlan)
+                    viewModel.upgradePlan(selectedPlan, userId)
                     confirmed = true
                 },
                 enabled  = !loading && !confirmed,
@@ -251,11 +255,11 @@ fun UpgradePlanScreen(
                 } else if (confirmed) {
                     Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Plan Upgraded!", fontWeight = FontWeight.Bold)
+                    Text("Plan Changed!", fontWeight = FontWeight.Bold)
                 } else {
                     Icon(Icons.Default.ArrowUpward, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Confirm Upgrade to ${selectedOption.name}", fontWeight = FontWeight.Bold)
+                    Text("Confirm: ${selectedOption.name} Plan", fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -274,7 +278,7 @@ fun UpgradePlanScreen(
 
             Spacer(Modifier.height(12.dp))
             Text(
-                "You can downgrade or cancel anytime in Plan settings.",
+                "You can change your plan at any time.",
                 fontSize = 12.sp,
                 color    = TextMuted
             )
