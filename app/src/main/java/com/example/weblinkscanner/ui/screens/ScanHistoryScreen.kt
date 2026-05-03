@@ -226,7 +226,7 @@ fun ScanHistoryScreen(
                                     expanded         = showExportMenu,
                                     onDismissRequest = { showExportMenu = false }
                                 ) {
-                                    val baseUrl = "http://10.0.2.2:8000/scan/export"
+                                    val baseUrl = "https://weblink-scanner.onrender.com/scan/export"
                                     DropdownMenuItem(
                                         text = { Text("Export as CSV") },
                                         onClick = {
