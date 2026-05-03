@@ -145,7 +145,7 @@ fun PMReportsScreen(
                     OutlinedButton(
                         onClick = {
                             val csv = buildString {
-                                appendLine("LinkScanner Report: ${report.period["start"]} to ${report.period["end"]}")
+                                appendLine("Weblink Scanner Report: ${report.period["start"]} to ${report.period["end"]}")
                                 appendLine("Total Scans,${report.totalScans}")
                                 appendLine("New Users,${report.newUsers}")
                                 appendLine()
