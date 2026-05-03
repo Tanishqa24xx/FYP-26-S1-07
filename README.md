@@ -1,134 +1,508 @@
 
-🕵️‍♂️ Weblink Scanner (FYP‑26‑S1‑07)
-----------------------------------
-Weblink Scanner is an Android security application designed to protect users from malicious links, phishing attempts, and insecure web pages. It combines mobile accessibility with high‑level script inspection and remote sandboxing, allowing users to safely verify any link—captured via browser, QR code, or camera OCR—before interacting with it.
+# 🔗 Weblink Scanner
+A multi-role mobile security platform for detecting malicious, phishing, and suspicious web links - before you click them.
 
+---
+ 
+## 📋 Table of Contents
+ 
+- [Overview](#overview)
+- [Features by Role](#features-by-role)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Threat Detection Engine](#threat-detection-engine)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Backend Setup](#backend-setup)
+  - [Android Setup](#android-setup)
+- [Environment Variables](#environment-variables)
+- [API Reference](#api-reference)
+- [Subscription Plans](#subscription-plans)
+- [Deployment](#deployment)
+- [Screenshots](#screenshots)
+  
+---
+ 
+## Overview
+ 
+Weblink Scanner is a full-stack, production-grade Android application designed to protect users from malicious URLs encountered in daily digital life. The system provides real-time threat intelligence through a multi-layer scanning engine that cross-references live threat feeds, heuristic URL analysis, and a remote sandbox environment.
+ 
+The platform supports three distinct user roles - **Regular Users**, **Administrators**, and **Platform Managers** - each with a dedicated interface and a well-defined set of permissions enforced at both the API and database level.
 
-🛡️ 3‑Layer Security Architecture
+---
+ 
+## Features by Role
+ 
+### 👤 Regular Users (Free / Standard / Premium)
+ 
+| Feature | Free | Standard | Premium |
+|---|:---:|:---:|:---:|
+| Manual URL scanning | ✅ (5/day) | ✅ (30/day) | ✅ (Unlimited) |
+| Camera OCR scanning | ✅ | ✅ | ✅ |
+| QR code scanning | ✅ | ✅ | ✅ |
+| Risk verdict (Safe / Suspicious / Dangerous) | ✅ | ✅ | ✅ |
+| Save & re-check links | ✅ | ✅ | ✅ |
+| Scan history | Last 5 | Last 30 days | All time |
+| Standard security analysis | ✅ | ✅ | ✅ |
+| Sandbox environment | ✅ | ✅ | ✅ |
+| Share scan results | ❌ | ✅ | ✅ |
+| Browse & auto-scan mode | ❌ | ✅ | ✅ |
+| History search & filter | ❌ | ✅ | ✅ |
+| Export history (CSV / PDF) | ❌ | ✅ | ✅ |
+| Advanced security analysis | ❌ | ❌ | ✅ |
+| Ad-heavy & tracker detection | ❌ | ❌ | ✅ |
+| Script-level inspection | ❌ | ❌ | ✅ |
+| Warning strictness control | ❌ | ✅ | ✅ |
+ 
+### 🛡️ Administrators
+ 
+- Full user lifecycle management (create, view, update, suspend, reactivate, lock/unlock)
+- User profile (permission group) management with granular per-feature access control
+- Security monitoring dashboard - failed login tracking and account lockout enforcement
+- Platform-wide scan record and flagged link review
+- Immutable audit log of all admin actions
+- Subscription plan assignment and management
+- Pending account approval workflow with email notifications
+### ⚙️ Platform Managers
+ 
+- Subscription plan lifecycle management (create, update, suspend, activate)
+- Analytics dashboard (user counts, scan volumes, verdict breakdowns, plan distribution)
+- Date-range report generation (CSV export support)
+- Support ticket management with threaded PM ↔ User replies
+- FAQ / Help content management (create, edit, delete, reorder)
+- System health monitoring and active alert resolution
+  
+---
 
-The application uses a fail‑fast scanning engine that evaluates threats across three layers:
+## Architecture
+ 
+```
+┌─────────────────────────────────────────────────────┐
+│                  Android Client                      │
+│         (Jetpack Compose + Retrofit + CameraX)       │
+└───────────────────────┬─────────────────────────────┘
+                        │ HTTPS / REST
+┌───────────────────────▼─────────────────────────────┐
+│               FastAPI Backend (Python)               │
+│                                                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐  │
+│  │ Auth     │ │ Scan     │ │ Admin    │ │ Platform│  │
+│  │ Router   │ │ Router   │ │ Router   │ │ Router │  │
+│  └──────────┘ └─────┬────┘ └──────────┘ └────────┘  │
+│                     │                                │
+│          ┌──────────▼──────────┐                    │
+│          │  Threat Detection   │                    │
+│          │     Engine          │                    │
+│          │  Layer 1: URLhaus   │                    │
+│          │           PhishTank │                    │
+│          │  Layer 2: Heuristics│                    │
+│          │  Layer 3: Umbrella  │                    │
+│          └──────────┬──────────┘                    │
+│                     │                               │
+│          ┌──────────▼──────────┐                    │
+│          │  Sandbox Service    │                    │
+│          │  (urlscan.io)       │                    │
+│          └─────────────────────┘                    │
+└───────────────────────┬─────────────────────────────┘
+                        │
+┌───────────────────────▼─────────────────────────────┐
+│                  Supabase                            │
+│       (PostgreSQL · Auth · Row-Level Security)       │
+└─────────────────────────────────────────────────────┘
+```
+ 
+---
 
-1. Layer 1 — Global Threat Intelligence (Blacklist Check)
-Cross‑references URLs against URLhaus (malware) and PhishTank (phishing).
+## Tech Stack
+ 
+### Backend
+| Component | Technology |
+|---|---|
+| Framework | FastAPI 0.115 |
+| Runtime | Python 3.11+ |
+| ASGI Server | Uvicorn |
+| HTTP Client | HTTPX (async) |
+| Database | Supabase (PostgreSQL) |
+| Auth | Supabase Auth (JWT) |
+| Email | SMTP via Gmail (TLS) |
+| PDF Generation | ReportLab |
+| Validation | Pydantic v2 |
+ 
+### Android Client
+| Component | Technology |
+|---|---|
+| Language | Kotlin |
+| UI Framework | Jetpack Compose + Material 3 |
+| Navigation | Navigation Compose |
+| Networking | Retrofit 2 + OkHttp |
+| Camera | CameraX |
+| OCR | ML Kit Text Recognition |
+| QR Scanning | ML Kit Barcode Scanning |
+| Image Loading | Coil 3 |
+| Session Storage | Jetpack DataStore |
+| Architecture | MVVM (ViewModel + StateFlow) |
+ 
+### External APIs
+| Service | Purpose |
+|---|---|
+| [URLhaus (abuse.ch)](https://urlhaus.abuse.ch/) | Real-time malware URL and host feed |
+| [PhishTank](https://phishtank.org/) | Community-verified phishing URL database |
+| [urlscan.io](https://urlscan.io/) | Remote sandbox browser analysis |
+| [Cisco Umbrella Top-1M](https://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip) | Trusted domain allowlist |
+| [Spamhaus TLD Statistics](https://www.spamhaus.org/statistics/tlds/) | High-risk TLD feed |
+| [OWASP Core Rule Set](https://github.com/coreruleset/coreruleset) | SQLi / XSS / RCE pattern detection |
+ 
+---
 
-Verdict: If a match is found, the link is instantly marked DANGEROUS, stopping further analysis.
+## Threat Detection Engine
+ 
+The scan engine runs URLs through three sequential layers. Each layer can escalate or resolve the verdict before passing to the next.
+ 
+### Layer 1 - Live Threat Feeds (always runs first)
+Checks the URL and its host against **URLhaus** (active malware distribution) and **PhishTank** (confirmed phishing). A positive match from either source returns `DANGEROUS` immediately. These results are authoritative and override all heuristics.
+ 
+### Layer 2 - Heuristic Analysis (runs when Layer 1 is clean)
+Scores the URL against 16 structural signals, all sourced from live external feeds where possible:
+ 
+| Signal | Score | Live Source |
+|---|:---:|---|
+| No HTTPS | +20 | - |
+| Phishing keyword in URL | +15 | URLhaus live tags |
+| URL length > 100 chars | +10 | - |
+| ≥ 4 subdomain levels | +15 | - |
+| IP address as host | +35 | - |
+| High-risk TLD | +20 | Spamhaus TLD stats |
+| @ symbol in URL | +25 | - |
+| ≥ 3 hyphens in domain | +20 | - |
+| Percent-encoded characters | +10 | - |
+| Punycode / IDN homograph | +25 | - |
+| Double file extension | +30 | OWASP CRS REQUEST-932 |
+| Free DDNS subdomain service | +25 | URLhaus malware feed |
+| UUID / random hex in path | +20 | - |
+| SQL injection patterns | +40 | OWASP CRS REQUEST-942 |
+| XSS patterns | +40 | OWASP CRS REQUEST-941 |
+| Executable / archive file | +30–40 | - |
+ 
+**Verdict thresholds:** Score ≥ 40 → `DANGEROUS` · Score ≥ 20 → `SUSPICIOUS` · Score < 20 → `SAFE`
+ 
+### Layer 3 - Trusted Domain Check (runs for SAFE and SUSPICIOUS only)
+If the verdict is not yet `DANGEROUS`, the registrable domain is checked against the **Cisco Umbrella Top-50,000**. A match with a valid HTTPS URL overrides the verdict to `SAFE`, suppressing false positives on major legitimate platforms.
+ 
+### Sandbox Analysis
+Powered by **urlscan.io**, the sandbox submits the URL to a remote browser, polls for the result, and extracts: redirect chain, SSL certificate details, external links, domains and IPs contacted, technology stack (Wappalyzer), console errors, page load time, ASN/hosting info, a screenshot, and - for Premium users - ad network detection, tracker detection, and suspicious third-party script inspection.
+ 
+---
+ 
+## Project Structure
+ 
+```
+weblink-scanner/
+├── backend/                    # FastAPI application
+│   ├── main.py                 # App entry point, router registration
+│   ├── config.py               # Environment variable loader
+│   ├── database.py             # Supabase client initialisation
+│   ├── schemas.py              # Pydantic request/response models
+│   ├── requirements.txt
+│   ├── reset_password.html     # Self-contained password reset page
+│   ├── routers/
+│   │   ├── auth_routes.py      # Login, signup, password reset, profile
+│   │   ├── scan_router.py      # URL, camera, QR scanning + history/export
+│   │   ├── sandbox_router.py   # Sandbox analysis endpoint
+│   │   ├── plan_router.py      # Subscription plan management
+│   │   ├── saved_links_router.py
+│   │   ├── admin_router.py     # Admin user/profile/audit management
+│   │   ├── platform_router.py  # PM plans/analytics/support/FAQ/health
+│   │   ├── approval_router.py  # Email-based account approval page
+│   │   └── faq_router.py       # Public FAQ endpoint
+│   └── services/
+│       ├── scan_service.py     # 3-layer threat detection engine
+│       └── sandbox_service.py  # urlscan.io integration
+│
+└── android/                    # Kotlin / Jetpack Compose app
+    ├── data/
+    │   ├── api/
+    │   │   ├── NewApiService.kt        # Retrofit interface (all endpoints)
+    │   │   └── NewRetrofitClient.kt    # OkHttp + Retrofit configuration
+    │   ├── models/                     # Request/response data classes
+    │   └── repository/
+    │       ├── WeblinkScannerRepository.kt
+    │       └── SessionStore.kt
+    ├── viewmodel/
+    │   ├── ScanViewModel.kt
+    │   ├── SandboxViewModel.kt
+    │   ├── PlanViewModel.kt
+    │   ├── AdminViewModel.kt
+    │   └── PlatformViewModel.kt
+    ├── ui/
+    │   ├── screens/            # All user-facing screens
+    │   ├── screens/admin/      # Admin-only screens
+    │   └── screens/platform/   # Platform Manager screens
+    └── utils/
+        ├── TokenManager.kt
+        ├── AutoLogoutManager.kt
+        ├── WarningStrictnessManager.kt
+        └── ScanLimitNotificationManager.kt
+```
+ 
+---
 
-2. Layer 2 — Heuristic Analysis Engine (Behavioral Check)
-Inspects URL entropy, length, and structure.
-
-Detects obfuscation techniques used to hide malicious destinations.
-
-Verdict: Assigns a risk score → SAFE, SUSPICIOUS, or DANGEROUS.
-
-3. Layer 3 — Remote Sandbox & Script Inspection (urlscan.io)
-Renders the link in an isolated remote browser.
-
-Visual Analysis: Generates a Base64 screenshot (via Coil 3).
-
-Deep Inspection: Extracts SSL/TLS details, identifies trackers, and lists external links found in the source code.
-
-----------------------------------
-👥 System Actors & Roles (RBAC)
-----------------------------------
-
-Role‑Based Access Control is managed via Supabase:
-Free User: Basic scanning + up to 5 history records.
-Standard User: Higher daily limits + up to 500 records.
-Premium User: Unlimited scans + advanced sandbox metrics + 2000+ history records.
-Admin: User management and scan log moderation.
-Platform Manager: Subscription Plan Management, API key management (URLhaus, urlscan), system analytics.
-
-----------------------------------
-🛠️ Technical Stack
-----------------------------------
-
-Frontend (Android Mobile)
-
-Framework: Jetpack Compose (Kotlin)
-Image Handling: Coil 3 (Base64 Data URI rendering)
-OCR/Scanning: Google ML Kit (Text Recognition & Barcode)
-Networking: Retrofit + OkHttp (60‑second timeouts)
-
-Backend (API)
-Framework: FastAPI (Python 3.12)
-Database: Supabase (PostgreSQL)
-Integrations: URLhaus, PhishTank, urlscan.io
-Environment: Windows‑optimized using WindowsSelectorEventLoopPolicy
-
-----------------------------------
-📂 Project Structure
-----------------------------------
-
-WeblinkScanner/
-
-├── app/                           # Android (Kotlin/Compose) source code
-
-├── backend/                       # Python FastAPI source code
-
-│            ├── routers/          # API endpoints (Scan, Sandbox, Plans, FAQ)
-
-│            ├── services/         # 3-Layer scanning logic & API integrations
-
-│            ├── config.py         # Global settings & .env loader
-
-│            └── main.py           # Application entry point
-
-├── .gitignore                     # Ignores venv, .env, large datasets
-
-└── README.md                      # Project documentation
-
-
-----------------------------------
-⚙️ Setup & Installation
-----------------------------------
-
-# 1. Backend Setup
-   
-bash
-1. Open terminal in project root
-2. Create virtual environment
+## Getting Started
+ 
+### Prerequisites
+ 
+- Python 3.11+
+- Android Studio Hedgehog or later
+- A [Supabase](https://supabase.com/) project
+- API keys for URLhaus, PhishTank, and urlscan.io (see [Environment Variables](#environment-variables))
+---
+ 
+### Backend Setup
+ 
+**1. Clone the repository**
+```bash
+git clone https://github.com/your-org/weblink-scanner.git
+cd weblink-scanner/backend
+```
+ 
+**2. Create and activate a virtual environment**
+```bash
 python -m venv venv
-
-3. Activate environment
+# macOS / Linux
+source venv/bin/activate
+# Windows
 venv\Scripts\activate
-
-4. Navigate to backend
-cd backend
-
-5. Install dependencies
+```
+ 
+**3. Install dependencies**
+```bash
 pip install -r requirements.txt
-
-Create a .env file inside backend/:
-
-env
-URLHAUS_API_KEY=your_key
-PHISHTANK_API_KEY=your_key
-URLSCAN_API_KEY=your_key
-
-Run the server:
-
-bash
-
+# For PDF export support
+pip install reportlab
+```
+ 
+**4. Configure environment variables**
+ 
+Copy the example file and fill in your credentials:
+```bash
+cp .env.example .env
+```
+ 
+See [Environment Variables](#environment-variables) for the full reference.
+ 
+**5. Run the development server**
+```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+ 
+The API will be available at `http://localhost:8000`.  
+Interactive docs: `http://localhost:8000/docs`
+ 
+---
+ 
+### Android Setup
+ 
+**1. Open the project**
+ 
+Open the `android/` directory (or root if monorepo) in Android Studio.
+ 
+**2. Set the backend URL**
+ 
+In `app/src/main/java/.../data/api/NewRetrofitClient.kt`, update `BASE_URL`:
+ 
+```kotlin
+// Local development (Android Emulator)
+private const val BASE_URL = "http://10.0.2.2:8000/"
+ 
+// Production
+private const val BASE_URL = "https://your-app.onrender.com/"
+```
+ 
+Also update the export URL in `ScanHistoryScreen.kt`:
+```kotlin
+val baseUrl = "https://your-app.onrender.com/scan/export"
+```
+ 
+**3. Build and run**
+ 
+Select an emulator or physical device and press **Run** (`Shift+F10`).
+ 
+---
+ 
+## Environment Variables
+ 
+Create a `.env` file in the backend directory with the following variables:
+ 
+```env
+#----- Supabase -----
+# Main database project
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+ 
+# Auth project (can be same project)
+SUPABASE_AUTH_URL=https://your-project.supabase.co
+SUPABASE_AUTH_ANON_KEY=your-anon-key
+ 
+# Service role key (used server-side only for admin ops)
+SUPABASE_SERVICE_KEY=your-service-role-key
+ 
+# ----- Threat Intelligence APIs -----
+URLHAUS_API_KEY=your-urlhaus-key
+PHISHTANK_API_KEY=your-phishtank-key
+URLSCAN_API_KEY=your-urlscan-key
+ 
+# ----- Email (SMTP - Gmail recommended) -----
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-gmail@gmail.com
+SMTP_PASS=your-app-password
+DEVELOPER_EMAIL=admin@yourdomain.com
+ 
+# ----- Server -----
+# Used in approval email links - must be publicly reachable
+SERVER_BASE_URL=https://your-app.onrender.com
+```
+ 
+> **Security note:** Never commit `.env` to version control. The `.gitignore` is pre-configured to exclude it.
+ 
+---
+ 
+## API Reference
+ 
+The full interactive API reference is available at `/docs` (Swagger UI) or `/redoc` when the server is running.
+ 
+### Key Endpoint Groups
+ 
+| Prefix | Description |
+|---|---|
+| `POST /login` | Authenticate and receive a JWT access token |
+| `POST /signup` | Register a new account |
+| `POST /forgot-password` | Send password reset email |
+| `PUT /update-profile` | Update name and email |
+| `DELETE /delete-account` | Permanently delete account |
+| `POST /scan/url` | Scan a URL for threats |
+| `POST /scan/camera` | Scan text extracted via OCR |
+| `POST /scan/qr` | Scan raw QR code data |
+| `GET /scan/history/{userId}` | Retrieve scan history |
+| `GET /scan/export` | Export history as CSV or PDF |
+| `POST /sandbox/analyse` | Run sandbox analysis via urlscan.io |
+| `GET /plan/` | Get user's current plan and usage |
+| `GET /plan/all` | List all available subscription plans |
+| `POST /plan/upgrade` | Change the user's subscription plan |
+| `GET /saved-links/{userId}` | Retrieve saved links |
+| `POST /saved-links/rescan` | Re-scan saved links (quota-aware) |
+| `GET /admin/users` | List all users (admin only) |
+| `GET /admin/audit` | Retrieve admin audit log |
+| `GET /platform/analytics/overview` | Platform analytics summary |
+| `GET /platform/support` | List support tickets |
+| `GET /platform/health` | System health status |
+ 
+All protected endpoints require an `Authorization: Bearer <token>` header.
+ 
+---
+ 
+## Subscription Plans
+ 
+| | Free | Standard | Premium |
+|---|:---:|:---:|:---:|
+| **Price** | $0/mo | $4.99/mo | $9.99/mo |
+| **Daily Scans** | 5 | 30 | Unlimited |
+| **Scan History** | Last 5 | 30 days | All time |
+| **Security Analysis** | Standard | Standard | Advanced |
+| **Sandbox** | ✅ | ✅ | ✅ |
+| **Browse & Auto-scan** | ❌ | ✅ | ✅ |
+| **Export (CSV/PDF)** | ❌ | ✅ | ✅ |
+| **Ad/Tracker Detection** | ❌ | ❌ | ✅ |
+| **Script Inspection** | ❌ | ❌ | ✅ |
+ 
+---
+ 
+## Deployment
+ 
+### Backend - Render (recommended)
+ 
+1. Push your code to GitHub.
+2. Create a new **Web Service** on [Render](https://render.com).
+3. Set **Build Command:** `pip install -r requirements.txt`
+4. Set **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
+5. Add all environment variables from `.env` in the Render dashboard under **Environment**.
+6. Set `SERVER_BASE_URL` to your Render public URL (e.g. `https://weblink-scanner-api.onrender.com`).
+7. Deploy. Render will auto-deploy on every push to `main`.
+### Android - Production Build
+ 
+1. Update `BASE_URL` in `NewRetrofitClient.kt` to your Render URL.
+2. Update the export URL in `ScanHistoryScreen.kt`.
+3. In Android Studio: **Build → Generate Signed Bundle / APK**.
+4. Distribute via Google Play or direct APK.
+---
+ 
+## Security Considerations
+ 
+- All authentication is handled by **Supabase Auth** (JWT-based, bcrypt-hashed passwords).
+- The **service role key** is used exclusively server-side and is never exposed to the Android client.
+- Admin and Platform Manager accounts require **manual approval** via an email workflow before login is permitted.
+- Accounts are automatically **locked** after 5 consecutive failed login attempts.
+- All user sessions support configurable **auto-logout** on inactivity (5, 10, or 30 minutes).
+- **User Profiles** provide fine-grained, per-feature permission control enforced at the API level.
+- The sandbox never loads the scanned URL on the user's device - analysis is performed entirely by urlscan.io's remote infrastructure.
+---
+ 
+## Contributing
+ 
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add your feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request against `main`.
+Please ensure all new backend endpoints are covered by Pydantic schemas and that any new screen follows the existing MVVM pattern.
+ 
+---
 
-# 2. Mobile Setup
-Open the project in Android Studio.
-Configure networking in NewRetrofitClient.kt:
+## Screenshots
 
-Emulator:
-<code>
-BASE_URL = "http://10.0.2.2:8000/"
-</code>
+### User Onboarding
+<p align="center"> 
+   <img width="260" alt="login" src="https://github.com/user-attachments/assets/70584d83-4fbe-4a7d-9fe4-6347f1dc0538" alt="Login Screen" />
+   <img width="260" alt="signup" src="https://github.com/user-attachments/assets/dfa11c5d-7970-480d-9714-683e0bc531ba" alt="Signup Screen" />
+</p>
 
-Physical Device:
-<code>
-BASE_URL = "http://<your_PC_IP>:8000/"
-</code>
+### Main Interface
+<p align="center">
+   <img width="260" alt="user-menu-dashboard" src="https://github.com/user-attachments/assets/b6a1690c-0299-48e4-890f-a24e56748482" />
+</p>
 
-Build and run on your device/emulator.
+### Core Features
+<p align="center">
+  <img width="260" alt="manual-url-scan" src="https://github.com/user-attachments/assets/e32d6759-53b6-424d-8395-c7ea52e4c1fc" />
+  <img width="260" alt="scan-result" src="https://github.com/user-attachments/assets/e58e6b01-59e5-49a7-a7cd-708401eefb46" />
+  <img width="260" alt="camera-ocr-scan" src="https://github.com/user-attachments/assets/7c86d974-b860-4f34-8589-b6f5b3e2c8bf" />
+  <img width="260" alt="qr-code-scan" src="https://github.com/user-attachments/assets/2ec80b59-df0d-4089-b27b-a42046fc67c2" />
 
-----------------------------------
-⚠️ Security Note
-----------------------------------
-This tool is for analysis purposes only. No scanner is 100% effective—always exercise caution when interacting with unknown URLs.
+</p>
+
+### Advanced Analysis
+<p align="center">
+  <img width="260" alt="standard-security-analysis" src="https://github.com/user-attachments/assets/352d2cec-3431-4164-a874-73ce0231ab1d" />
+  <img width="260" alt="sandbox-analysis-1" src="https://github.com/user-attachments/assets/0bf83692-15be-487b-bb1e-515ccf982e39" />
+  <img width="260" alt="sandbox-analysis-2" src="https://github.com/user-attachments/assets/a9bad1b4-74f8-405e-b811-e08b5bb796c4" />
+  <img width="260" alt="sandbox-analysis-3" src="https://github.com/user-attachments/assets/fb597ccf-0112-4a27-a3cb-2419ce78bf64" />
+  <img width="260" alt="sandbox-analysis-4" src="https://github.com/user-attachments/assets/36148fad-fa82-467c-b09b-4efd770eea5c" />
+</p>
+
+### User Data & Tools
+<p align="center">
+  <img width="260" alt="scan-history" src="https://github.com/user-attachments/assets/e8616012-e52f-45dc-95bb-e9f4c7752bc7" />
+  <img width="260" alt="saved-links" src="https://github.com/user-attachments/assets/71d69dca-d83f-480d-a140-b89075e28841" />
+  <img width="260" alt="settings" src="https://github.com/user-attachments/assets/d02eeef1-6a4d-44f7-a55f-8c6c72f2d41d" />
+</p>
+
+### Administrative Interfaces
+<p align="center">
+  <img width="260" alt="admin-dashboard-1" src="https://github.com/user-attachments/assets/382ea6e9-fa46-4899-ab5e-8d235c4d53f8" />
+  <img width="260" alt="admin-dashboard-2" src="https://github.com/user-attachments/assets/42de4b0f-9cd4-42c0-8eef-36813ee8361e" />
+  <img width="260" alt="platform-manager-dashboard" src="https://github.com/user-attachments/assets/d02dd5bc-3c56-44f7-9640-15e5dc5c77e8" />
+</p>
+
+---
+ 
+<p align="center">Built with ❤️ using FastAPI, Supabase, and Jetpack Compose</p>
 
