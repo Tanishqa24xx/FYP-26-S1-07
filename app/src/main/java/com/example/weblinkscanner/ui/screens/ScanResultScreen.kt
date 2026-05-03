@@ -28,7 +28,7 @@ import com.example.weblinkscanner.utils.WarningStrictnessManager
 import com.example.weblinkscanner.utils.ScanLimitNotificationManager
 import kotlinx.coroutines.launch
 
-// --- Colors ---
+
 private val Blue600     = Color(0xFF2563EB)
 private val Blue50      = Color(0xFFEFF6FF)
 private val Blue100     = Color(0xFFDBEAFE)
@@ -116,7 +116,7 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(52.dp))
 
-            // --- Header ---
+            // Header
             Box(
                 modifier = Modifier
                     .size(64.dp)
@@ -135,7 +135,7 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // --- Scans remaining banner — Free plan only ---
+            // Scans remaining banner
             AnimatedVisibility(
                 visible = remaining != null && !bannerDismissed && hasLimitPlan && notifEnabled,
                 enter   = slideInVertically() + fadeIn(),
@@ -193,7 +193,7 @@ fun ScanResultScreen(
                 }
             }
 
-            // --- Verdict card ---
+            // Verdict card
             Card(
                 modifier  = Modifier
                     .fillMaxWidth()
@@ -219,7 +219,7 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(10.dp))
 
-            // --- Scanned URL card with final destination for paid plans ---
+            // Scanned URL card with final destination for paid plans
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -274,7 +274,7 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(10.dp))
 
-            // --- Why this result card ---
+            // Why this result card
             // For SAFE: show a clean confirmation (reasons are noise at this verdict).
             // For SUSPICIOUS / DANGEROUS: show the full list of signals.
             if (scan.riskLevel.uppercase() == "SAFE") {
@@ -337,10 +337,10 @@ fun ScanResultScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // --- Action buttons ---
+            // Action buttons
 
             if (isPaidPlan) {
-                // Security Analysis — Standard & Premium only
+                // Security Analysis: Standard & Premium only
                 Button(
                     onClick = { onSecurityAnalysisClick(
                         scan.url ?: "", scan.scanId,
@@ -370,7 +370,7 @@ fun ScanResultScreen(
 
                 Spacer(Modifier.height(10.dp))
             } else {
-                // Free user — show upgrade prompt instead
+                // Free user: show upgrade prompt instead
                 Card(
                     modifier  = Modifier.fillMaxWidth(),
                     shape     = RoundedCornerShape(14.dp),
@@ -391,7 +391,7 @@ fun ScanResultScreen(
                 Spacer(Modifier.height(10.dp))
             }
 
-            // --- Share button (Standard and Premium only) ---
+            // Share button (Standard and Premium only)
             if (isPaidPlan) {
                 OutlinedButton(
                     onClick = {
@@ -422,7 +422,7 @@ fun ScanResultScreen(
                 Spacer(Modifier.height(10.dp))
             }
 
-            // --- Save Link button ---
+            // Save Link button
             val saveColor = when (saveStatus) {
                 "saved"   -> SafeGreen
                 "already" -> WarnOrange

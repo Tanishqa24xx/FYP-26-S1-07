@@ -80,7 +80,7 @@ fun PMDashboardScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ── PM Identity Card ─────────────────────────────────────────────
+            // PM Identity Card
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -113,7 +113,7 @@ fun PMDashboardScreen(
                 }
             }
 
-            // ── Stats Grid ───────────────────────────────────────────────────
+            // Stats Grid
             val overview = (overviewState as? PlatformViewModel.UiState.Success)?.data
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PMStatCard("Total Users", overview?.totalUsers?.toString() ?: "—", Icons.Default.People, PMTeal, PMTealBg, Modifier.weight(1f))
@@ -124,7 +124,7 @@ fun PMDashboardScreen(
                 PMStatCard("Active Users", overview?.activeUsers?.toString() ?: "—", Icons.Default.HowToReg, PMAmber, PMAmberBg, Modifier.weight(1f))
             }
 
-            // ── Navigation Grid ──────────────────────────────────────────────
+            // Navigation Grid
             Text("Management", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = PMMuted)
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

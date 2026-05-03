@@ -2,7 +2,7 @@ package com.example.weblinkscanner.data.models
 
 import com.google.gson.annotations.SerializedName
 
-// ── Admin Stats ───────────────────────────────────────────────────────────────
+// --- Admin Stats ---
 
 data class AdminStatsResponse(
     @SerializedName("total_users")   val totalUsers: Int,
@@ -11,7 +11,7 @@ data class AdminStatsResponse(
     @SerializedName("paid_users")    val paidUsers: Int
 )
 
-// ── Admin User ────────────────────────────────────────────────────────────────
+// --- Admin User ---
 
 data class AdminUser(
     val id: String,
@@ -30,7 +30,7 @@ data class AdminUsersResponse(
     val users: List<AdminUser>
 )
 
-// ── Create / Update User ──────────────────────────────────────────────────────
+// --- Create / Update User ---
 
 data class CreateAdminUserRequest(
     val name: String,
@@ -46,7 +46,7 @@ data class UpdateAdminUserRequest(
     val plan: String? = null
 )
 
-// ── User Profile ──────────────────────────────────────────────────────────────
+// --- User Profile ---
 
 data class UserProfile(
     val id: String,
@@ -83,7 +83,7 @@ data class AssignProfileRequest(
     @SerializedName("profile_id") val profileId: String
 )
 
-// ── Admin Scan Record ─────────────────────────────────────────────────────────
+// --- Admin Scan Record ---
 
 data class AdminScanRecord(
     val id: String,
@@ -101,7 +101,7 @@ data class AdminScanRecordsResponse(
     val total: Int
 )
 
-// ── Audit Log ─────────────────────────────────────────────────────────────────
+// --- Audit Log ---
 
 data class AuditLogEntry(
     val id: String,
@@ -116,7 +116,7 @@ data class AuditLogEntry(
 
 data class AuditLogResponse(val entries: List<AuditLogEntry>)
 
-// ── Subscription Management ───────────────────────────────────────────────────
+// --- Subscription Management ---
 
 data class SubscriptionStats(
     val total: Int,

@@ -151,7 +151,7 @@ fun MyPlanScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Usage card - paid plans show unlimited, free plan shows count + bar
+            // Usage card - premium show unlimited, free & standard plan show count + bar
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),

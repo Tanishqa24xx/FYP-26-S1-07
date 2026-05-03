@@ -29,9 +29,7 @@ import coil3.request.crossfade
 import com.example.weblinkscanner.data.models.SandboxReport
 import com.example.weblinkscanner.viewmodel.SandboxViewModel
 
-// ---------------------------------------------------------------------------
-// Colour palette
-// ---------------------------------------------------------------------------
+
 private val Blue600     = Color(0xFF2563EB)
 private val Blue50      = Color(0xFFEFF6FF)
 private val Blue100     = Color(0xFFDBEAFE)
@@ -48,9 +46,8 @@ private val RedBg       = Color(0xFFFEE2E2)
 private val AmberWarn   = Color(0xFFD97706)
 private val AmberBg     = Color(0xFFFEF3C7)
 
-// ---------------------------------------------------------------------------
+
 // Entry point
-// ---------------------------------------------------------------------------
 @Composable
 fun SandboxScreen(
     viewModel: SandboxViewModel,
@@ -125,9 +122,7 @@ fun SandboxScreen(
     }
 }
 
-// ---------------------------------------------------------------------------
 // Loading
-// ---------------------------------------------------------------------------
 @Composable
 private fun LoadingCard() {
     Card(
@@ -155,9 +150,7 @@ private fun LoadingCard() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Error
-// ---------------------------------------------------------------------------
 @Composable
 private fun ErrorCard(error: String, onRetry: () -> Unit) {
     Card(
@@ -183,13 +176,11 @@ private fun ErrorCard(error: String, onRetry: () -> Unit) {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Full report
-// ---------------------------------------------------------------------------
 @Composable
 private fun ReportContent(r: SandboxReport, context: android.content.Context) {
 
-    // --- urlscan verdict banner ---
+    // urlscan verdict banner
     val score = r.verdictScore
     if (score != null || r.malicious != null) {
         val isMalicious = r.malicious == true || (score != null && score > 0)
@@ -220,7 +211,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
         Spacer(Modifier.height(12.dp))
     }
 
-    // --- Screenshot ---
+    // Screenshot
     // urlscan.io returns a public PNG URL: https://urlscan.io/screenshots/{uuid}.png
     // We load it with Coil exactly like any remote image.
     r.screenshotUrl?.let { shotUrl ->
@@ -260,7 +251,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
         Spacer(Modifier.height(12.dp))
     }
 
-    // --- Page overview ---
+    // Page overview
     SectionCard(title = "Page Overview", icon = Icons.Default.Info) {
         DetailRow("Page Title",  r.pageTitle  ?: "-")
         Div()
@@ -286,7 +277,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
     }
     Spacer(Modifier.height(12.dp))
 
-    // --- SSL / TLS: raw certificate fields ---
+    // SSL / TLS: raw certificate fields
     r.sslInfo?.let { ssl ->
         val sslValid = ssl.valid == true
         Card(
@@ -323,7 +314,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
         Spacer(Modifier.height(12.dp))
     }
 
-    // --- Technologies ---
+    // Technologies
     if (r.techDetected.isNotEmpty()) {
         SectionCard(
             title    = "Technologies Detected",
@@ -338,7 +329,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
         Spacer(Modifier.height(12.dp))
     }
 
-    // --- Hosting / ASN ---
+    // Hosting / ASN
     r.asnInfo?.let { asn ->
         SectionCard(title = "Hosting", icon = Icons.Default.Storage) {
             asn.asn?.let     { DetailRow("ASN",     it) }
@@ -348,7 +339,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
         Spacer(Modifier.height(12.dp))
     }
 
-    // --- Redirect chain - show first 6, expand ---
+    // Redirect chain - we show first 6, expand
     var redirectExpanded by remember { mutableStateOf(false) }
     SectionCard(
         title    = "Redirect Chain",
@@ -392,7 +383,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
     }
     Spacer(Modifier.height(12.dp))
 
-    // --- External links - show first 6, expand to see rest ---
+    // External links - show first 6, expand to see rest
     var linksExpanded by remember { mutableStateOf(false) }
     SectionCard(
         title    = "External Links",
@@ -432,7 +423,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
     }
     Spacer(Modifier.height(12.dp))
 
-    // --- Domains contacted - show first 6, expand to see rest ---
+    // Domains contacted - show first 6, expand to see rest
     if (r.domainsContacted.isNotEmpty()) {
         var domainsExpanded by remember { mutableStateOf(false) }
         SectionCard(
@@ -468,7 +459,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
         Spacer(Modifier.height(12.dp))
     }
 
-    // --- IPs contacted - show first 6, expand ---
+    // IPs contacted - show first 6, expand
     if (r.ipsContacted.isNotEmpty()) {
         var ipsExpanded by remember { mutableStateOf(false) }
         SectionCard(
@@ -502,7 +493,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
         Spacer(Modifier.height(12.dp))
     }
 
-    // --- Console messages - show first 6, expand ---
+    // Console messages - show first 6, expand
     if (r.consoleMessages.isNotEmpty()) {
         var consoleExpanded by remember { mutableStateOf(false) }
         SectionCard(
@@ -536,7 +527,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
         Spacer(Modifier.height(12.dp))
     }
 
-    // --- Report link ---
+    // Report link
     r.reportUrl?.let { rUrl ->
         Card(
             modifier  = Modifier.fillMaxWidth(),
@@ -558,9 +549,7 @@ private fun ReportContent(r: SandboxReport, context: android.content.Context) {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Reusable composables
-// ---------------------------------------------------------------------------
 
 @Composable
 private fun SectionCard(

@@ -18,25 +18,25 @@ class AdminViewModel : ViewModel() {
         data class Error(val message: String) : UiState<Nothing>()
     }
 
-    // ── Stats ─────────────────────────────────────────────────────────────────
+    // --- Stats ---
     private val _stats = MutableStateFlow<UiState<AdminStatsResponse>>(UiState.Idle)
     val stats: StateFlow<UiState<AdminStatsResponse>> = _stats.asStateFlow()
 
-    // ── Users list ────────────────────────────────────────────────────────────
+    // --- Users list ---
     private val _users = MutableStateFlow<UiState<List<AdminUser>>>(UiState.Idle)
     val users: StateFlow<UiState<List<AdminUser>>> = _users.asStateFlow()
 
-    // ── Selected user ─────────────────────────────────────────────────────────
+    // --- Selected user ---
     private val _selectedUser = MutableStateFlow<UiState<AdminUser>>(UiState.Idle)
     val selectedUser: StateFlow<UiState<AdminUser>> = _selectedUser.asStateFlow()
 
-    // ── Action result (suspend/reactivate/lock/unlock/create/update) ──────────
+    // --- Action result (suspend/reactivate/lock/unlock/create/update) ---
     private val _actionResult = MutableStateFlow<UiState<String>>(UiState.Idle)
     val actionResult: StateFlow<UiState<String>> = _actionResult.asStateFlow()
 
     fun clearActionResult() { _actionResult.value = UiState.Idle }
 
-    // ── Load Stats ────────────────────────────────────────────────────────────
+    // --- Load Stats ---
     fun loadStats(token: String) {
         viewModelScope.launch {
             _stats.value = UiState.Loading
@@ -53,7 +53,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Load Users ────────────────────────────────────────────────────────────
+    // --- Load Users ---
     fun loadUsers(token: String, search: String? = null) {
         viewModelScope.launch {
             _users.value = UiState.Loading
@@ -70,7 +70,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Load Single User ──────────────────────────────────────────────────────
+    // --- Load Single User ---
     fun loadUser(token: String, userId: String) {
         viewModelScope.launch {
             _selectedUser.value = UiState.Loading
@@ -87,7 +87,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Create User ───────────────────────────────────────────────────────────
+    // --- Create User ---
     fun createUser(token: String, request: CreateAdminUserRequest, onDone: () -> Unit) {
         viewModelScope.launch {
             _actionResult.value = UiState.Loading
@@ -106,7 +106,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Update User ───────────────────────────────────────────────────────────
+    // --- Update User ---
     fun updateUser(token: String, userId: String, request: UpdateAdminUserRequest, onDone: () -> Unit) {
         viewModelScope.launch {
             _actionResult.value = UiState.Loading
@@ -124,7 +124,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Account Status Actions ────────────────────────────────────────────────
+    // --- Account Status Actions ---
     private fun performAction(
         token: String,
         userId: String,
@@ -171,7 +171,7 @@ class AdminViewModel : ViewModel() {
         NewRetrofitClient.api.rejectUser("Bearer $token", userId)
     }
 
-    // ── Profile State ─────────────────────────────────────────────────────────
+    // --- Profile State ---
     private val _profiles = MutableStateFlow<UiState<List<UserProfile>>>(UiState.Idle)
     val profiles: StateFlow<UiState<List<UserProfile>>> = _profiles.asStateFlow()
 
@@ -183,7 +183,7 @@ class AdminViewModel : ViewModel() {
 
     fun clearProfileActionResult() { _profileActionResult.value = UiState.Idle }
 
-    // ── Load Profiles ─────────────────────────────────────────────────────────
+    // --- Load Profiles ---
     fun loadProfiles(token: String, search: String? = null) {
         viewModelScope.launch {
             _profiles.value = UiState.Loading
@@ -200,7 +200,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Load Single Profile ───────────────────────────────────────────────────
+    // --- Load Single Profile ---
     fun loadProfile(token: String, profileId: String) {
         viewModelScope.launch {
             _selectedProfile.value = UiState.Loading
@@ -217,7 +217,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Create Profile ────────────────────────────────────────────────────────
+    // --- Create Profile ---
     fun createProfile(token: String, request: CreateProfileRequest, onDone: () -> Unit) {
         viewModelScope.launch {
             _profileActionResult.value = UiState.Loading
@@ -238,7 +238,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Update Profile ────────────────────────────────────────────────────────
+    // --- Update Profile ---
     fun updateProfile(token: String, profileId: String, request: AdminProfileUpdateRequest, onDone: () -> Unit) {
         viewModelScope.launch {
             _profileActionResult.value = UiState.Loading
@@ -257,7 +257,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Suspend / Reactivate Profile ──────────────────────────────────────────
+    // --- Suspend / Reactivate Profile ---
     private fun performProfileAction(token: String, profileId: String, successMsg: String,
         action: suspend () -> retrofit2.Response<Map<String, String>>) {
         viewModelScope.launch {
@@ -286,7 +286,7 @@ class AdminViewModel : ViewModel() {
             NewRetrofitClient.api.reactivateProfile("Bearer $token", profileId)
         }
 
-    // ── Assign / Remove Profile from User ─────────────────────────────────────
+    // --- Assign / Remove Profile from User ---
     fun assignProfile(token: String, userId: String, profileId: String) {
         viewModelScope.launch {
             _actionResult.value = UiState.Loading
@@ -327,7 +327,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Security Monitor ──────────────────────────────────────────────────────
+    // --- Security Monitor ---
     private val _securityUsers = MutableStateFlow<UiState<List<AdminUser>>>(UiState.Idle)
     val securityUsers: StateFlow<UiState<List<AdminUser>>> = _securityUsers.asStateFlow()
 
@@ -347,7 +347,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Scan Records ──────────────────────────────────────────────────────────
+    // --- Scan Records ---
     private val _scanRecords = MutableStateFlow<UiState<AdminScanRecordsResponse>>(UiState.Idle)
     val scanRecords: StateFlow<UiState<AdminScanRecordsResponse>> = _scanRecords.asStateFlow()
 
@@ -367,7 +367,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Flagged Links ─────────────────────────────────────────────────────────
+    // --- Flagged Links ---
     private val _flaggedLinks = MutableStateFlow<UiState<AdminScanRecordsResponse>>(UiState.Idle)
     val flaggedLinks: StateFlow<UiState<AdminScanRecordsResponse>> = _flaggedLinks.asStateFlow()
 
@@ -387,7 +387,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Audit Log ─────────────────────────────────────────────────────────────
+    // --- Audit Log ---
     private val _auditLog = MutableStateFlow<UiState<List<AuditLogEntry>>>(UiState.Idle)
     val auditLog: StateFlow<UiState<List<AuditLogEntry>>> = _auditLog.asStateFlow()
 
@@ -407,7 +407,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    // ── Subscriptions ─────────────────────────────────────────────────────────
+    // --- Subscriptions ---
     private val _subscriptions = MutableStateFlow<UiState<SubscriptionResponse>>(UiState.Idle)
     val subscriptions: StateFlow<UiState<SubscriptionResponse>> = _subscriptions.asStateFlow()
 

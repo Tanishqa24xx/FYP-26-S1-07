@@ -8,7 +8,7 @@ import retrofit2.http.*
 
 interface NewApiService {
 
-    // ── AUTH (legacy Call<> style used by Login/Signup/EditProfile screens) ───
+    // --- Auth ---
     @POST("login")
     fun login(
         @Body request: LoginRequest
@@ -35,7 +35,7 @@ interface NewApiService {
         @Body request: UpdateProfileRequest
     ): Response<Map<String, String>>
 
-    // ── PLANS ─────────────────────────────────────────────────────────────────
+    // --- PLANS ---
     @GET("plan/")
     suspend fun getMyPlan(
         @Header("Authorization") token: String,
@@ -52,7 +52,7 @@ interface NewApiService {
         @Body request: UpgradePlanRequest
     ): Response<UpgradePlanResponse>
 
-    // ── SCANNING ──────────────────────────────────────────────────────────────
+    // --- SCANNING ---
     @POST("scan/url")
     suspend fun scanUrl(
         @Header("Authorization") token: String,
@@ -71,7 +71,7 @@ interface NewApiService {
         @Body request: QRScanRequest
     ): Response<QRScanResponse>
 
-    // ── SANDBOX ───────────────────────────────────────────────────────────────
+    // --- SANDBOX ---
     @POST("sandbox/analyse")
     suspend fun analyseSandbox(
         @Header("Authorization") token: String,
@@ -85,7 +85,7 @@ interface NewApiService {
         @Path("scanId") scanId: String
     ): Response<SandboxReport>
 
-    // ── SAVED LINKS ───────────────────────────────────────────────────────────
+    // --- SAVED LINKS ---
     @POST("saved-links/")
     suspend fun saveLink(
         @Header("Authorization") token: String,
@@ -130,7 +130,7 @@ interface NewApiService {
         @Header("Authorization") token: String
     ): Response<List<@JvmSuppressWildcards Map<String, String>>>
 
-    // ── USER SUPPORT ──────────────────────────────────────────────────────────
+    // --- USER SUPPORT ---
     @POST("platform/support/submit")
     suspend fun submitSupportRequest(
         @Header("Authorization") token: String,
@@ -150,7 +150,7 @@ interface NewApiService {
         @Body request: Map<String, String>
     ): Response<Map<String, String>>
 
-    // ── SCAN HISTORY ──────────────────────────────────────────────────────────
+    // --- SCAN HISTORY ---
     @POST("scan/history/delete")
     suspend fun deleteHistoryItems(
         @Header("Authorization") token: String,
@@ -169,7 +169,7 @@ interface NewApiService {
         @Query("user_id") userId: String
     ): Response<Map<String, String>>
 
-    // ── ADMIN ─────────────────────────────────────────────────────────────────
+    // --- ADMIN ---
     @GET("admin/stats")
     suspend fun getAdminStats(
         @Header("Authorization") token: String
@@ -236,7 +236,7 @@ interface NewApiService {
         @Path("userId") userId: String
     ): Response<Map<String, String>>
 
-    // ── ADMIN PROFILES ────────────────────────────────────────────────────────
+    // --- ADMIN PROFILES ---
     @GET("admin/profiles")
     suspend fun getProfiles(
         @Header("Authorization") token: String,
@@ -287,7 +287,7 @@ interface NewApiService {
         @Path("userId") userId: String
     ): Response<Map<String, String>>
 
-    // ── ADMIN MONITOR / REPORTS ───────────────────────────────────────────────
+    // --- ADMIN MONITOR / REPORTS ---
     @GET("admin/security")
     suspend fun getSecurityUsers(
         @Header("Authorization") token: String
@@ -320,7 +320,7 @@ interface NewApiService {
         @Header("Authorization") token: String
     ): Response<Map<String, Int>>
 
-    // ── PLATFORM MANAGER ──────────────────────────────────────────────────────
+    // --- PLATFORM MANAGER ---
     @GET("platform/plans")
     suspend fun getPMPlans(
         @Header("Authorization") token: String

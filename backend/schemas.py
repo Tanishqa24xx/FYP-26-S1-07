@@ -116,7 +116,7 @@ class SandboxReport(BaseModel):
 
     analysis_source: Optional[str] = None
 
-    # Premium enrichment — ad/tracker/script analysis
+    # Premium enrichment - ad/tracker/script analysis
     detected_ad_tech:   List[str] = []
     detected_trackers:  List[str] = []
     suspicious_scripts: List[str] = []
@@ -124,7 +124,7 @@ class SandboxReport(BaseModel):
 
 
 
-# --- PLANS: using camelCase aliases to match Android ApiModels ---
+# --- PLANS ---
 
 class PlanInfo(BaseModel):
     name: str

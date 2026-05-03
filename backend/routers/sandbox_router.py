@@ -1,4 +1,4 @@
-# sandbox_router.py
+# routers/sandbox_router.py
 
 from fastapi import APIRouter
 from services.sandbox_service import run_sandbox
@@ -11,6 +11,7 @@ from database import supabase
 
 router = APIRouter()
 
+# Verifies if a user's assigned profile actually grants them permission to use the sandbox.
 def check_user_permission(user_id: str, permission: str):
     GUEST_ID = "00000000-0000-0000-0000-000000000000"
     if user_id == GUEST_ID:
@@ -36,6 +37,7 @@ def check_user_permission(user_id: str, permission: str):
         pass
 
 
+# Converts the raw JSON data from our analysis engine into a structured report for the app.
 def build_report(report: dict, original_url: str) -> SandboxReport:
     ssl_raw = report.get("ssl_info")
     ssl_info = SSLInfo(
@@ -107,6 +109,7 @@ def build_report(report: dict, original_url: str) -> SandboxReport:
     )
 
 
+# Runs a URL inside an isolated environment to safely check for threats and tracking behavior.
 @router.post("/analyse", response_model=SandboxReport)
 async def analyse_sandbox(body: SandboxRequest):
     try:

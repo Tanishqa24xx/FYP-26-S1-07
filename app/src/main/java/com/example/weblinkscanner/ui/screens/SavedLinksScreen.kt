@@ -95,7 +95,7 @@ fun SavedLinksScreen(
                 is Result.Success -> {
                     val resp = r.data
                     if (resp.quotaWarning) {
-                        // Show warning dialog — don't mark as rescanning
+                        // Show warning dialog
                         quotaDlgMsg    = resp.message
                         pendingForceIds = ids
                         showQuotaDlg   = true
@@ -117,7 +117,7 @@ fun SavedLinksScreen(
 
     LaunchedEffect(userId) { loadLinks() }
 
-    // --- Dialogs ---
+    // Dialogs
     if (showRemoveDlg) {
         AlertDialog(
             onDismissRequest = { showRemoveDlg = false },
@@ -156,7 +156,7 @@ fun SavedLinksScreen(
         )
     }
 
-    // --- Layout ---
+    // Layout
     Box(
         modifier = Modifier
             .fillMaxSize()

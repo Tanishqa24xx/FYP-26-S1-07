@@ -109,7 +109,7 @@ fun UserManagementScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ── Search Bar ────────────────────────────────────────────────────
+            // Search Bar
             OutlinedTextField(
                 value         = searchQuery,
                 onValueChange = {
@@ -140,7 +140,7 @@ fun UserManagementScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ── User List ─────────────────────────────────────────────────────
+            // User List
             when (val state = usersState) {
                 is AdminViewModel.UiState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

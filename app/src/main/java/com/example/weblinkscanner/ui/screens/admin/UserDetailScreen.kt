@@ -232,7 +232,7 @@ fun UserDetailScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // ── Avatar & Status ───────────────────────────────────────
+                    // Avatar & Status
                     Card(
                         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBg),
@@ -269,7 +269,7 @@ fun UserDetailScreen(
                         }
                     }
 
-                    // ── Edit / View Fields ────────────────────────────────────
+                    //  Edit / View Fields
                     Card(
                         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBg),
@@ -356,7 +356,7 @@ fun UserDetailScreen(
                         }
                     }
 
-                    // ── Pending Approval Banner ───────────────────────────────
+                    // Pending Approval Banner
                     val registrationStatus = user.status ?: "approved"
                     if (registrationStatus == "pending") {
                         Card(
@@ -400,7 +400,7 @@ fun UserDetailScreen(
                         }
                     }
 
-                    // ── Account Actions ───────────────────────────────────────
+                    // Account Actions
                     Card(
                         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBg),
@@ -424,7 +424,7 @@ fun UserDetailScreen(
                         }
                     }
 
-                    // ── Profile Assignment ────────────────────────────────────
+                    // Profile Assignment
                     Card(
                         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBg),

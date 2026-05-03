@@ -11,6 +11,7 @@ from typing import List
 router = APIRouter(prefix="/saved-links", tags=["Saved Links"])
 
 
+# Saves a new link to the user's bookmarks or updates the status if it's already there.
 @router.post("/")
 def save_link(body: SaveLinkRequest):
     try:
@@ -47,6 +48,7 @@ def save_link(body: SaveLinkRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# Retrieves all the links a specific user has saved, sorted by the most recently checked.
 @router.get("/{user_id}", response_model=SavedLinksResponse)
 def get_saved_links(user_id: str):
     try:
@@ -71,6 +73,7 @@ def get_saved_links(user_id: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# Permanently removes one or more links from the user's saved collection.
 @router.post("/delete")
 def delete_links(ids: List[str]):
     try:
@@ -83,18 +86,13 @@ def delete_links(ids: List[str]):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# Re-evaluates saved links to check for new threats while respecting the user's daily scan quota.
 @router.post("/rescan", response_model=RescanResponse)
 async def rescan_saved_links(
     user_id: str        = Query(...),
     force: bool         = Query(default=False),
     selected_ids: List[str] = Query(default=[])
 ):
-    """
-    Rescans saved links with quota awareness.
-    selected_ids: if provided, only those links are rescanned.
-    force: if True, proceed even if quota is insufficient (scans up to remaining).
-    Oldest-first ordering so quota is spent on most stale links.
-    """
     try:
         GUEST_ID       = "00000000-0000-0000-0000-000000000000"
         FREE_DAILY_LIMIT = 5
@@ -123,7 +121,7 @@ async def rescan_saved_links(
             except Exception as e:
                 print(f"[rescan] Quota check error: {e}", flush=True)
 
-        # Fetch links — oldest first so quota is spent on most stale
+        # Fetch links - oldest first so quota is spent on most stale
         query = supabase.table("saved_links") \
             .select("id, url, type") \
             .eq("user_id", user_id) \
@@ -154,8 +152,8 @@ async def rescan_saved_links(
                 total=len(links),
             )
 
-        updated      = 0
-        scanned      = 0
+        updated = 0
+        scanned = 0
         quota_skipped = 0
         error_skipped = 0
 

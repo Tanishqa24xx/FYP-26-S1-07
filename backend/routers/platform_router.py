@@ -1,3 +1,5 @@
+#routers/platform_router.py
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional
@@ -247,9 +249,6 @@ def generate_report(start_date: Optional[str] = Query(None), end_date: Optional[
 
 
 # --- Support Requests ---
-# NOTE: static routes (/support/submit, /support/my/{user_id}) must come
-# before the parameterised route (/support/{request_id}) or FastAPI will
-# try to match "submit" and "my" as request IDs.
 
 @router.get("/support")
 def list_support(status: Optional[str] = Query(None)):

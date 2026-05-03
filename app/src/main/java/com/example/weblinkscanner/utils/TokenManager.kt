@@ -1,3 +1,9 @@
+/*
+ This is where we handle the login session and user details.
+ We use SharedPreferences to keep the token and user info handy across the app
+ so the user doesn't have to log in every single time they open it.
+ */
+
 package com.example.weblinkscanner.utils
 
 import android.content.Context
@@ -40,7 +46,7 @@ object TokenManager {
             .apply()
     }
 
-    // Keep backward compat
+    // --- Keep backward compat ---
     fun saveToken(context: Context, token: String) {
         val expiry = System.currentTimeMillis() + SESSION_DURATION
         prefs(context).edit()
@@ -72,6 +78,6 @@ object TokenManager {
         prefs(context).edit().clear().apply()
     }
 
-    // Keep backward compat
+    // --- Keep backward compat ---
     fun clearToken(context: Context) = clearSession(context)
 }

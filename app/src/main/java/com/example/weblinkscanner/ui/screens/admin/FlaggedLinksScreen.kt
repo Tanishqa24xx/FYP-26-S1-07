@@ -175,7 +175,7 @@ private fun FlaggedLinkRow(record: AdminScanRecord) {
             }
             Text(record.url ?: "Unknown URL", fontSize = 13.sp, color = FLTxt,
                 fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            // --- Updated Threat Categories Section ---
+            // Threat Categories
             if (!record.threatCategories.isNullOrEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = Color(0xFFF1F5F9))
 

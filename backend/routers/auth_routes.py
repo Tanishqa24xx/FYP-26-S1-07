@@ -1,3 +1,5 @@
+#routers/auth_router.py
+
 import os
 import smtplib
 from email.mime.text import MIMEText
@@ -17,8 +19,8 @@ SMTP_USER        = os.environ.get("SMTP_USER", "")
 SMTP_PASS        = os.environ.get("SMTP_PASS", "")
 SERVER_BASE_URL  = os.environ.get("SERVER_BASE_URL", "http://localhost:8000")
 
+# Fetch all approved admin emails + the developer fallback.
 def get_approver_emails() -> list[str]:
-    """Fetch all approved admin emails + the developer fallback."""
     try:
         rows = supabase.table("users").select("email") \
                    .eq("role", "admin") \

@@ -36,7 +36,7 @@ fun SignUpScreen(
     onSignUpSuccess: () -> Unit = {},
     onNavigateToLogin: () -> Unit = {}
 ) {
-    // ── State ─────────────────────────────────────────────────────────────────
+    // State
     val roleOptions      = listOf("User", "Admin", "Platform Manager")
     var selectedRole     by remember { mutableStateOf(roleOptions[0]) }
     var roleDropdownOpen by remember { mutableStateOf(false) }
@@ -59,7 +59,7 @@ fun SignUpScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showPendingDialog by remember { mutableStateOf(false) }
 
-    // ── Colors ────────────────────────────────────────────────────────────────
+    // Colors
     val blueAccent  = Color(0xFF2563EB)
     val lightBg     = Color(0xFFF2F4F8)
     val cardBg      = Color.White
@@ -67,7 +67,7 @@ fun SignUpScreen(
     val textHint    = Color(0xFF9E9E9E)
     val errorColor  = Color(0xFFE53935)
 
-    // ── Validation ────────────────────────────────────────────────────────────
+    // Validation
     fun validate(): Boolean {
         var valid = true
 
@@ -100,7 +100,7 @@ fun SignUpScreen(
         return valid
     }
 
-    // ── Sign Up Handler ───────────────────────────────────────────────────────
+    // Sign Up Handler
     fun doSignUp() {
         Log.d("SIGNUP", "doSignUp() called")
 
@@ -169,7 +169,7 @@ fun SignUpScreen(
         })
     }
 
-    // ── Success Dialog ────────────────────────────────────────────────────────
+    // Success Dialog
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { },
@@ -211,7 +211,7 @@ fun SignUpScreen(
         )
     }
 
-    // ── Pending Approval Dialog ───────────────────────────────────────────────
+    // Pending Approval Dialog
     if (showPendingDialog) {
         AlertDialog(
             onDismissRequest = { },
@@ -251,7 +251,7 @@ fun SignUpScreen(
         )
     }
 
-    // ── UI ────────────────────────────────────────────────────────────────────
+    // UI
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = lightBg
@@ -288,7 +288,7 @@ fun SignUpScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
 
-                    // ── Sign Up As Dropdown ───────────────────────────────────
+                    // Sign Up As Dropdown
                     Text("Sign up as", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = textPrimary)
                     Spacer(modifier = Modifier.height(2.dp))
                     ExposedDropdownMenuBox(
@@ -325,7 +325,7 @@ fun SignUpScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // ── Full Name ─────────────────────────────────────────────
+                    // Full Name
                     Text("Full Name", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = textPrimary)
                     Spacer(modifier = Modifier.height(2.dp))
                     OutlinedTextField(
@@ -345,7 +345,7 @@ fun SignUpScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // ── Email ─────────────────────────────────────────────────
+                    // Email
                     Text("Email", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = textPrimary)
                     Spacer(modifier = Modifier.height(2.dp))
                     OutlinedTextField(
@@ -365,7 +365,7 @@ fun SignUpScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // ── Password ──────────────────────────────────────────────
+                    // Password
                     Text("Password", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = textPrimary)
                     Spacer(modifier = Modifier.height(2.dp))
                     OutlinedTextField(
@@ -395,7 +395,7 @@ fun SignUpScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // ── Confirm Password ──────────────────────────────────────
+                    // Confirm Password
                     Text("Confirm Password", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = textPrimary)
                     Spacer(modifier = Modifier.height(2.dp))
                     OutlinedTextField(
@@ -423,7 +423,7 @@ fun SignUpScreen(
                         Text(confirmPasswordError, color = errorColor, fontSize = 12.sp)
                     }
 
-                    // ── Global API Error ──────────────────────────────────────
+                    // Global API Error
                     if (signUpError.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Card(
@@ -445,7 +445,7 @@ fun SignUpScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // ── Sign Up Button ────────────────────────────────────────
+                    // Sign Up Button
                     Button(
                         onClick = { doSignUp() },
                         enabled = !isLoading,
@@ -489,7 +489,7 @@ fun SignUpScreen(
     }
 }
 
-// ── Helper ────────────────────────────────────────────────────────────────────
+// Helper
 @Composable
 private fun fieldColors(accent: Color, error: Color, text: Color) =
     OutlinedTextFieldDefaults.colors(

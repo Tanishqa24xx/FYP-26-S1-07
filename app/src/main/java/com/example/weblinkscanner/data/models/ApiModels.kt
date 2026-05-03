@@ -123,7 +123,7 @@ data class SandboxReport(
 
     @SerializedName("analysis_source") val analysisSource: String?,
 
-    // Premium enrichment — ad/tracker/script analysis
+    // Premium - ad/tracker/script analysis
     @SerializedName("detected_ad_tech") val detectedAdTech: List<String> = emptyList(),
     @SerializedName("detected_trackers") val detectedTrackers: List<String> = emptyList(),
     @SerializedName("suspicious_scripts") val suspiciousScripts: List<String> = emptyList(),
@@ -219,34 +219,34 @@ data class UpdateProfileRequest(
     val email: String
 )
 
-// ── USER SUPPORT / REPORT ─────────────────────────────────────────────────────
+// --- USER SUPPORT / REPORT ---
 
 data class CreateSupportRequest(
     @SerializedName("user_id") val userId:  String,
-    val email:   String,
+    val email: String,
     val subject: String,
     val message: String
 )
 
 data class SupportReply(
-    val id:           String,
-    @SerializedName("request_id")   val requestId:  String,
-    val message:      String,
-    @SerializedName("sender_type")  val senderType: String,
+    val id: String,
+    @SerializedName("request_id") val requestId: String,
+    val message: String,
+    @SerializedName("sender_type") val senderType: String,
     @SerializedName("sender_email") val senderEmail: String?,
-    @SerializedName("created_at")   val createdAt:  String?
+    @SerializedName("created_at") val createdAt: String?
 )
 
 data class UserSupportRequest(
-    val id:         String,
-    @SerializedName("user_id")    val userId:    String,
-    val email:      String?,
-    val subject:    String,
-    val message:    String,
-    val status:     String,
+    val id: String,
+    @SerializedName("user_id") val userId: String,
+    val email: String?,
+    val subject: String,
+    val message: String,
+    val status: String,
     @SerializedName("created_at") val createdAt: String?,
     @SerializedName("updated_at") val updatedAt: String?,
-    val replies:    List<SupportReply> = emptyList()
+    val replies: List<SupportReply> = emptyList()
 )
 
 data class UserSupportListResponse(

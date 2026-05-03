@@ -36,18 +36,18 @@ private val CardBg       = Color.White
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
-    adminName:  String,
+    adminName: String,
     adminEmail: String,
-    token:      String,
-    viewModel:  AdminViewModel,
-    onNavigateToUserManagement:      () -> Unit,
-    onNavigateToUserProfiles:        () -> Unit,
-    onNavigateToSecurityMonitor:     () -> Unit,
-    onNavigateToScanRecords:         () -> Unit,
-    onNavigateToFlaggedLinks:        () -> Unit,
-    onNavigateToAuditLog:            () -> Unit,
-    onNavigateToSubscriptions:       () -> Unit,
-    onNavigateToSettings:            () -> Unit,
+    token: String,
+    viewModel: AdminViewModel,
+    onNavigateToUserManagement: () -> Unit,
+    onNavigateToUserProfiles: () -> Unit,
+    onNavigateToSecurityMonitor: () -> Unit,
+    onNavigateToScanRecords: () -> Unit,
+    onNavigateToFlaggedLinks: () -> Unit,
+    onNavigateToAuditLog: () -> Unit,
+    onNavigateToSubscriptions: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit
 ) {
     val statsState by viewModel.stats.collectAsState()
@@ -86,7 +86,7 @@ fun AdminDashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(48.dp))
 
-            // ── Header ────────────────────────────────────────────────────────
+            // --- Header ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -106,7 +106,7 @@ fun AdminDashboardScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Admin Profile Card ────────────────────────────────────────────
+            // --- Admin Profile Card ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -135,7 +135,7 @@ fun AdminDashboardScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ── Stats Cards ───────────────────────────────────────────────────
+            // --- Stats Cards ---
             when (val s = statsState) {
                 is AdminViewModel.UiState.Loading -> {
                     Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
@@ -152,34 +152,34 @@ fun AdminDashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── Section label ─────────────────────────────────────────────────
+            // --- Section label ---
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text("Admin Features", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextMuted)
             }
             Spacer(modifier = Modifier.height(10.dp))
 
-            // ── Navigation Items ──────────────────────────────────────────────
-            AdminNavRow("User Management",      Icons.Default.Group,          "Create, view, update & suspend users",       onClick = onNavigateToUserManagement)
+            // --- Navigation Items ---
+            AdminNavRow("User Management", Icons.Default.Group, "Create, view, update & suspend users",       onClick = onNavigateToUserManagement)
             Spacer(modifier = Modifier.height(8.dp))
-            AdminNavRow("User Profiles",        Icons.Default.ManageAccounts, "Manage roles and permissions",               onClick = onNavigateToUserProfiles)
+            AdminNavRow("User Profiles", Icons.Default.ManageAccounts, "Manage roles and permissions",               onClick = onNavigateToUserProfiles)
             Spacer(modifier = Modifier.height(8.dp))
-            AdminNavRow("Security Monitor",     Icons.Default.Security,       "Failed logins & locked accounts",            onClick = onNavigateToSecurityMonitor)
+            AdminNavRow("Security Monitor", Icons.Default.Security, "Failed logins & locked accounts",            onClick = onNavigateToSecurityMonitor)
             Spacer(modifier = Modifier.height(8.dp))
-            AdminNavRow("Scan Records",         Icons.Default.History,        "All user scan activity",                     onClick = onNavigateToScanRecords)
+            AdminNavRow("Scan Records", Icons.Default.History, "All user scan activity",                     onClick = onNavigateToScanRecords)
             Spacer(modifier = Modifier.height(8.dp))
-            AdminNavRow("Flagged Links",        Icons.Default.Flag,           "Malicious & suspicious links",               onClick = onNavigateToFlaggedLinks)
+            AdminNavRow("Flagged Links", Icons.Default.Flag, "Malicious & suspicious links",               onClick = onNavigateToFlaggedLinks)
             Spacer(modifier = Modifier.height(8.dp))
-            AdminNavRow("Audit Log",            Icons.Default.EventNote,      "History of admin actions",                   onClick = onNavigateToAuditLog)
+            AdminNavRow("Audit Log", Icons.Default.EventNote, "History of admin actions",                   onClick = onNavigateToAuditLog)
             Spacer(modifier = Modifier.height(8.dp))
-            AdminNavRow("Subscriptions",        Icons.Default.CreditCard,     "Assign, update & cancel user plans",         onClick = onNavigateToSubscriptions)
+            AdminNavRow("Subscriptions", Icons.Default.CreditCard, "Assign, update & cancel user plans",         onClick = onNavigateToSubscriptions)
             Spacer(modifier = Modifier.height(8.dp))
-            AdminNavRow("Settings",             Icons.Default.Settings,       "Profile, password & auto-logout",            onClick = onNavigateToSettings)
+            AdminNavRow("Settings", Icons.Default.Settings, "Profile, password & auto-logout",            onClick = onNavigateToSettings)
 
             Spacer(modifier = Modifier.height(28.dp))
             HorizontalDivider(color = Color(0xFFE2E8F0))
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ── Log Out ───────────────────────────────────────────────────────
+            // --- Log Out ---
             OutlinedButton(
                 onClick = onLogout,
                 modifier = Modifier.fillMaxWidth().height(52.dp),

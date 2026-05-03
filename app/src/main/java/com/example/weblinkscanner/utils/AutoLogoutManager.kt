@@ -1,3 +1,9 @@
+/*
+ This utility keeps track of how long the user can stay inactive before we kick them out.
+ we are storing the timeout settings in SharedPreferences so it remembers the user's
+ choice even after the app closes.
+ */
+
 package com.example.weblinkscanner.utils
 
 import android.content.Context
@@ -12,7 +18,7 @@ object AutoLogoutManager {
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
-    // Save timeout per user
+    // --- Save timeout per user ---
     fun saveTimeout(context: Context, minutes: Int, userId: String = "default") {
         prefs(context).edit().putInt("${KEY_TIMEOUT_MIN}_$userId", minutes).apply()
     }

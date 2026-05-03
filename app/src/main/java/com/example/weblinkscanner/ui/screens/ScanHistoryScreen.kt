@@ -103,7 +103,7 @@ fun ScanHistoryScreen(
         } else filtered
     }
 
-    // --- Dialogs ---
+    // Dialogs
     if (showClearAll) {
         AlertDialog(
             onDismissRequest = { showClearAll = false },
@@ -141,7 +141,7 @@ fun ScanHistoryScreen(
         )
     }
 
-    // ── Scaffold with pinned bottom bar ──────────────────────────────────────
+    // Scaffold with pinned bottom bar
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
@@ -293,7 +293,7 @@ fun ScanHistoryScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp)
             ) {
-                // ── Header ────────────────────────────────────────────────────
+                // Header
                 item {
                     Spacer(Modifier.height(36.dp))
                     Box(
@@ -323,7 +323,7 @@ fun ScanHistoryScreen(
                     Spacer(Modifier.height(24.dp))
                 }
 
-                // ── Search + Filter + Sort (paid only) ────────────────────────
+                // Search + Filter + Sort (paid only)
                 if (isPaidPlan) {
                     item {
                         OutlinedTextField(
@@ -406,7 +406,7 @@ fun ScanHistoryScreen(
                     }
                 }
 
-                // ── History list card ─────────────────────────────────────────
+                // History list card
                 item {
                     Card(
                         modifier  = Modifier.fillMaxWidth(),
@@ -414,53 +414,37 @@ fun ScanHistoryScreen(
                         colors    = CardDefaults.cardColors(containerColor = CardBg),
                         elevation = CardDefaults.cardElevation(3.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            when {
-                                isLoading -> Box(
-                                    Modifier.fillMaxWidth().padding(32.dp), Alignment.Center
-                                ) { CircularProgressIndicator(color = Blue600) }
 
-                                errorMsg != null -> Text(
-                                    errorMsg!!, color = RedDanger, fontSize = 13.sp,
-                                    modifier = Modifier.padding(8.dp)
+                        when {
+                            isLoading -> Box(
+                                Modifier.fillMaxWidth().padding(32.dp), Alignment.Center
+                            ) { CircularProgressIndicator(color = Blue600) }
+
+                            errorMsg != null -> Text(
+                                errorMsg!!, color = RedDanger, fontSize = 13.sp,
+                                modifier = Modifier.padding(8.dp)
+                            )
+
+                            displayItems.isEmpty() -> Box(
+                                Modifier.fillMaxWidth().padding(32.dp), Alignment.Center
+                            ) {
+                                Text(
+                                    if (items.isEmpty()) "No scan history yet.\nScan a URL to get started."
+                                    else "No results match your search.",
+                                    color = TextMuted,
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center
                                 )
-
-                                displayItems.isEmpty() -> Box(
-                                    Modifier.fillMaxWidth().padding(32.dp), Alignment.Center
-                                ) {
-                                    Text(
-                                        if (items.isEmpty()) "No scan history yet.\nScan a URL to get started."
-                                        else "No results match your search.",
-                                        color     = TextMuted,
-                                        fontSize  = 14.sp,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-
-                                else -> {} // rows rendered below as individual items
                             }
-                        }
-                    }
-                }
 
-                // ── History rows (inside card visual but as separate items for performance) ──
-                if (!isLoading && errorMsg == null && displayItems.isNotEmpty()) {
-                    // Re-open card for rows
-                    item {
-                        Card(
-                            modifier  = Modifier.fillMaxWidth(),
-                            shape     = RoundedCornerShape(16.dp),
-                            colors    = CardDefaults.cardColors(containerColor = CardBg),
-                            elevation = CardDefaults.cardElevation(3.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            else -> Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                                 displayItems.forEachIndexed { index, item ->
                                     HistoryRow(
-                                        url        = item.url ?: "",
-                                        riskLevel  = item.riskLevel,
-                                        date       = item.scannedAt.take(10),
+                                        url = item.url ?: "",
+                                        riskLevel = item.riskLevel,
+                                        date = item.scannedAt.take(10),
                                         isSelected = item.scanId in selectedIds,
-                                        onToggle   = {
+                                        onToggle = {
                                             selectedIds = if (item.scanId in selectedIds)
                                                 selectedIds - item.scanId
                                             else
@@ -469,13 +453,13 @@ fun ScanHistoryScreen(
                                     )
                                     if (index < displayItems.lastIndex)
                                         HorizontalDivider(color = DividerCol, thickness = 0.5.dp)
-                                }
+                                } // rows rendered below as individual items
                             }
                         }
                     }
                 }
 
-                // ── Bottom spacer so last item isn't hidden behind bottom bar ─
+                // Bottom spacer so last item isn't hidden behind bottom bar
                 item { Spacer(Modifier.height(16.dp)) }
             }
         }

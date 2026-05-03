@@ -18,7 +18,7 @@ class PlatformViewModel : ViewModel() {
         data class Error(val message: String) : UiState<Nothing>()
     }
 
-    // ── Plans ─────────────────────────────────────────────────────────────────
+    // --- Plans ---
     private val _plans = MutableStateFlow<UiState<List<PMSubscriptionPlan>>>(UiState.Idle)
     val plans: StateFlow<UiState<List<PMSubscriptionPlan>>> = _plans.asStateFlow()
 
@@ -90,7 +90,7 @@ class PlatformViewModel : ViewModel() {
     fun activatePlan(token: String, planId: String) = planStatusAction(token, planId, "Plan activated") {
         NewRetrofitClient.api.activatePMPlan("Bearer $token", planId) }
 
-    // ── Analytics ─────────────────────────────────────────────────────────────
+    // --- Analytics ---
     private val _analyticsOverview = MutableStateFlow<UiState<PMAnalyticsOverview>>(UiState.Idle)
     val analyticsOverview: StateFlow<UiState<PMAnalyticsOverview>> = _analyticsOverview.asStateFlow()
 
@@ -134,7 +134,7 @@ class PlatformViewModel : ViewModel() {
         }
     }
 
-    // ── Support ───────────────────────────────────────────────────────────────
+    // --- Support ---
     private val _supportRequests = MutableStateFlow<UiState<List<PMSupportRequest>>>(UiState.Idle)
     val supportRequests: StateFlow<UiState<List<PMSupportRequest>>> = _supportRequests.asStateFlow()
 
@@ -189,7 +189,7 @@ class PlatformViewModel : ViewModel() {
         }
     }
 
-    // ── FAQ ───────────────────────────────────────────────────────────────────
+    // --- FAQ ---
     private val _faqs = MutableStateFlow<UiState<List<PMFaqItem>>>(UiState.Idle)
     val faqs: StateFlow<UiState<List<PMFaqItem>>> = _faqs.asStateFlow()
 
@@ -241,7 +241,7 @@ class PlatformViewModel : ViewModel() {
         }
     }
 
-    // ── System Health ─────────────────────────────────────────────────────────
+    // --- System Health ---
     private val _systemHealth = MutableStateFlow<UiState<PMSystemHealthResponse>>(UiState.Idle)
     val systemHealth: StateFlow<UiState<PMSystemHealthResponse>> = _systemHealth.asStateFlow()
 

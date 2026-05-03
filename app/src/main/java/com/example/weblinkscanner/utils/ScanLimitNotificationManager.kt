@@ -1,3 +1,9 @@
+/*
+ This keeps track of whether the user wants to get pinged when they're
+ running low on their daily scan limit. We save it per userId so
+ different people on the same phone don't mess up each other's settings.
+ */
+
 package com.example.weblinkscanner.utils
 
 import android.content.Context

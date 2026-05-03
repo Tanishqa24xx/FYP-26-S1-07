@@ -63,7 +63,7 @@ fun UserSupportScreen(
 
     LaunchedEffect(Unit) { load() }
 
-    // ── New Request Dialog ─────────────────────────────────────────────────────
+    // New Request Dialog
     if (showNewDlg) {
         NewSupportDialog(
             onDismiss = { showNewDlg = false },
@@ -77,7 +77,7 @@ fun UserSupportScreen(
         )
     }
 
-    // ── Detail / Reply Dialog ──────────────────────────────────────────────────
+    // Detail / Reply Dialog
     selectedReq?.let { req ->
         SupportDetailDialog(
             request   = req,
@@ -137,7 +137,7 @@ fun UserSupportScreen(
     }
 }
 
-// ── Support Request Card ───────────────────────────────────────────────────────
+// Support Request Card
 @Composable
 private fun SupportRequestCard(req: UserSupportRequest, onClick: () -> Unit) {
     val (statusColor, statusBg, statusLabel) = when (req.status) {
@@ -192,7 +192,7 @@ private fun SupportRequestCard(req: UserSupportRequest, onClick: () -> Unit) {
     }
 }
 
-// ── New Support Request Dialog ─────────────────────────────────────────────────
+// New Support Request Dialog
 @Composable
 private fun NewSupportDialog(onDismiss: () -> Unit, onSubmit: (subject: String, message: String) -> Unit) {
     var subject by remember { mutableStateOf("") }
@@ -244,7 +244,7 @@ private fun NewSupportDialog(onDismiss: () -> Unit, onSubmit: (subject: String, 
     )
 }
 
-// ── Support Detail / Reply Dialog ──────────────────────────────────────────────
+// Support Detail / Reply Dialog
 @Composable
 private fun SupportDetailDialog(
     request:   UserSupportRequest,

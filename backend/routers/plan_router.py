@@ -54,13 +54,14 @@ PLAN_CATALOGUE = [
     ),
 ]
 
+# Retrieves specific plan details from our internal catalogue.
 def get_plan_details(plan_name: str) -> PlanInfo:
     for p in PLAN_CATALOGUE:
         if p.name.lower() == plan_name.lower():
             return p
     return PLAN_CATALOGUE[0]
 
-
+# Fetches the user's current subscription status and tracks their daily scan usage.
 @router.get("/")
 async def get_my_plan(user_id: str = Query(default="00000000-0000-0000-0000-000000000000")):
     GUEST_ID = "00000000-0000-0000-0000-000000000000"
@@ -106,12 +107,12 @@ async def get_my_plan(user_id: str = Query(default="00000000-0000-0000-0000-0000
     )
     return JSONResponse(content=response.model_dump(by_alias=True))
 
-
+# Returns the full list of available subscription tiers and their respective features.
 @router.get("/all")
 async def get_all_plans():
     return {"plans": [p.model_dump() for p in PLAN_CATALOGUE]}
 
-
+# Handles the database update when a user chooses to switch their subscription plan.
 @router.post("/upgrade")
 async def upgrade_plan(
         user_id: str = Query(default="00000000-0000-0000-0000-000000000000"),

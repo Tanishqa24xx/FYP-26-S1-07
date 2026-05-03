@@ -1,3 +1,10 @@
+
+/*
+ This repository handles all our API calls to the FastAPI backend.
+ It's basically the middleman between the Retrofit client and our ViewModels.
+ Added some safeCall logic here to catch network errors and keep the app from crashing.
+*/
+
 package com.example.weblinkscanner.data.repository
 
 import com.example.weblinkscanner.data.api.NewRetrofitClient

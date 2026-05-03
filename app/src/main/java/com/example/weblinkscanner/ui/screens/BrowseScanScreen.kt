@@ -83,7 +83,7 @@ fun BrowseScanScreen(
     // Hold a reference to the WebView so we can call loadUrl on it
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
-    // --- Pre-navigation scan logic ---
+    // Pre-navigation scan logic
     // Returns true if the URL should be loaded immediately (SAFE + strict=Low),
     // false if it should wait for user decision via the overlay.
     fun scanAndDecide(url: String, doLoad: () -> Unit) {
@@ -127,7 +127,7 @@ fun BrowseScanScreen(
     Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(PageBgTop, PageBgBot)))) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // --- Top bar ---
+            // Top bar
             Surface(
                 shadowElevation = 4.dp,
                 color = Color.White
@@ -208,7 +208,7 @@ fun BrowseScanScreen(
                 )
             }
 
-            // --- WebView ---
+            // WebView
             Box(modifier = Modifier.weight(1f)) {
                 AndroidView(
                     factory = { context ->

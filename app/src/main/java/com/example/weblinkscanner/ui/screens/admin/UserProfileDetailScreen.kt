@@ -183,7 +183,7 @@ fun UserProfileDetailScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // ── Header Card ───────────────────────────────────────────
+                    // Header Card
                     Card(
                         modifier  = Modifier.fillMaxWidth(),
                         shape     = RoundedCornerShape(16.dp),
@@ -224,7 +224,7 @@ fun UserProfileDetailScreen(
                         }
                     }
 
-                    // ── Permissions Card ──────────────────────────────────────
+                    // Permissions Card
                     Text("Permissions", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DMuted)
                     Spacer(Modifier.height(8.dp))
 
@@ -297,8 +297,7 @@ fun UserProfileDetailScreen(
 
                     }
 
-                    // ── NEW: Warning for Zero Permissions ─────────────────────────────────────
-                    // Place this OUTSIDE the card for better visibility
+                    // Warning for Zero Permissions
                     if (!isEditing && profile.permissions.isEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Card(
@@ -355,7 +354,7 @@ fun UserProfileDetailScreen(
                         }
                     }
 
-                    // ── Profile Actions Card ──────────────────────────────────
+                    // Profile Actions Card
                     Card(
                         modifier  = Modifier.fillMaxWidth(),
                         shape     = RoundedCornerShape(16.dp),
@@ -377,7 +376,7 @@ fun UserProfileDetailScreen(
                         }
                     }
 
-                    // ── Assigned Users Card ───────────────────────────────────
+                    // Assigned Users Card
                     val assignedUsers = profile.assignedUsers ?: emptyList()
                     Card(
                         modifier  = Modifier.fillMaxWidth(),

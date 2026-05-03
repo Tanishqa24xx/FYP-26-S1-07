@@ -18,6 +18,7 @@ from database import supabase
 
 router = APIRouter(prefix="/scan", tags=["Scan"])
 
+# Defines how many scans each plan gets per day.
 PLAN_DAILY_LIMITS = {
     "free":     5,
     "standard": 30,
@@ -26,6 +27,8 @@ PLAN_DAILY_LIMITS = {
 
 URL_REGEX = re.compile(r"https?://[^\s]+", re.IGNORECASE)
 
+
+# Pulls a valid URL out of a block of text, supporting both full links and bare domains.
 def extract_url(text: str):
     text = text.strip()
     # First try explicit http/https URL (same as ScanUrl input)
@@ -39,6 +42,7 @@ def extract_url(text: str):
     return None
 
 
+# Checks if the user has reached their daily scan limit based on their subscription tier.
 def check_quota_and_get_plan(user_id: str) -> tuple:
     GUEST_ID = "00000000-0000-0000-0000-000000000000"
     if user_id == GUEST_ID:
@@ -85,6 +89,7 @@ def check_quota_and_get_plan(user_id: str) -> tuple:
         return PLAN_DAILY_LIMITS["free"], "free"
 
 
+# Logs scan details to history for the user and records usage for quota tracking.
 def save_scan(user_id: str, url: str, result: dict, source: str) -> str:
     scan_id = str(uuid.uuid4())
     try:
@@ -114,6 +119,7 @@ def save_scan(user_id: str, url: str, result: dict, source: str) -> str:
 
 
 # --- /scan/url ---
+# Processes a manual URL scan request after verifying permissions and remaining quota.
 @router.post("/url", response_model=ScanResponse)
 async def scan_url(body: ScanRequest):
     user_id = body.user_id or "00000000-0000-0000-0000-000000000000"
@@ -136,6 +142,7 @@ async def scan_url(body: ScanRequest):
 
 
 # --- /scan/camera ---
+# Analyzes text extracted from a camera to find a URL and perform a security scan.
 @router.post("/camera", response_model=CameraScanResponse)
 async def scan_camera(body: CameraScanRequest):
     extracted_url = extract_url(body.extracted_text)
@@ -162,6 +169,7 @@ async def scan_camera(body: CameraScanRequest):
 
 
 # --- /scan/qr ---
+# Extracts data from a QR code and scans it if it contains a valid web link.
 @router.post("/qr", response_model=QRScanResponse)
 async def scan_qr(body: QRScanRequest):
     extracted_url = extract_url(body.raw_qr_data)
@@ -188,6 +196,7 @@ async def scan_qr(body: QRScanRequest):
 
 
 # --- /scan/history/delete ---
+# Deletes specific entries from the user's scan history based on provided IDs.
 @router.post("/history/delete")
 def delete_history_items(ids: List[str]):
     try:
@@ -201,6 +210,7 @@ def delete_history_items(ids: List[str]):
 
 
 # --- /scan/history/{user_id} ---
+# Retrieves previous scan records for a user, applying limits based on their plan.
 @router.get("/history/{user_id}")
 def get_scan_history(user_id: str):
     try:
@@ -260,17 +270,12 @@ def get_scan_history(user_id: str):
 
 
 # --- /scan/export ---
+# Generates a CSV or PDF report of the user's scan history for Standard and Premium tiers.
 @router.get("/export")
 def export_scan_history(
     user_id: str = Query(...),
     fmt: str = Query(default="csv"),  # "csv" or "pdf"
 ):
-    """
-    Exports scan history for the user.
-    Standard: last 30 days as CSV.
-    Premium:  all history as CSV or PDF.
-    Free:     403 forbidden.
-    """
     try:
         # get user plan
         rows = supabase.table("users") \
@@ -410,8 +415,8 @@ def export_scan_history(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Internal check to ensure the user's assigned profile allows for the requested action.
 def check_user_permission(user_id: str, permission: str):
-    """Raise 403 if user's profile does not include the required permission."""
     GUEST_ID = "00000000-0000-0000-0000-000000000000"
     if user_id == GUEST_ID:
         return  # guests bypass profile check

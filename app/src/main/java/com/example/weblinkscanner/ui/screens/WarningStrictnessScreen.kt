@@ -77,7 +77,7 @@ fun WarningStrictnessScreen(
             )
             Spacer(Modifier.height(24.dp))
 
-            // --- Options ---
+            // Options
             listOf(
                 Triple(
                     WarningStrictnessManager.LOW,
@@ -153,7 +153,7 @@ fun WarningStrictnessScreen(
                 Spacer(Modifier.height(10.dp))
             }
 
-            // --- Current effect info ---
+            // Current effect info
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(12.dp),

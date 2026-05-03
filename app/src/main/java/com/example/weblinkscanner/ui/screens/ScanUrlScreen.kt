@@ -116,7 +116,7 @@ fun ScanUrlScreen(
             Text("Check if a link is safe", fontSize = 14.sp, color = TextMuted)
             Spacer(Modifier.height(20.dp))
 
-            // --- Plan quota bar (Free and Standard only) ---
+            // Plan quota bar (Free and Standard only)
             if (hasLimit && limitReached) {
                 Card(
                     modifier  = Modifier.fillMaxWidth(),
@@ -189,7 +189,7 @@ fun ScanUrlScreen(
 
             Spacer(Modifier.height(14.dp))
 
-            // --- URL input ---
+            // URL input
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),
@@ -249,7 +249,7 @@ fun ScanUrlScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // --- Camera / QR ---
+            // Camera / QR
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick  = { if (!limitReached) onCameraClick() },
@@ -291,7 +291,7 @@ fun ScanUrlScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // --- Recent scans ---
+            // Recent scans
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(16.dp),

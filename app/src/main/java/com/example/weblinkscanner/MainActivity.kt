@@ -156,7 +156,7 @@ fun AppNavigation(
 
     NavHost(navController = navController, startDestination = startDestination) {
 
-        // ── Login ──────────────────────────────────────────────────────────────
+        // --- Login ---
         composable("login") {
             LoginScreen(
                 onLoginSuccess = { name, email, plan, userId, token, role ->
@@ -179,7 +179,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Sign Up ────────────────────────────────────────────────────────────
+        // --- Sign Up ---
         composable("signup") {
             SignUpScreen(
                 onSignUpSuccess   = {
@@ -189,7 +189,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Menu ───────────────────────────────────────────────────────────────
+        // --- Menu ---
         composable("menu") {
             MenuScreen(
                 userName                = loggedInName,
@@ -211,7 +211,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Scan URL ───────────────────────────────────────────────────────────
+        // --- Scan URL ---
         composable("scan_url") {
             val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
             val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
@@ -231,7 +231,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Camera ─────────────────────────────────────────────────────────────
+        // --- Camera ---
         composable("camera") {
             CameraScreen(
                 viewModel      = scanViewModel,
@@ -241,7 +241,7 @@ fun AppNavigation(
             )
         }
 
-        // ── QR ─────────────────────────────────────────────────────────────────
+        // --- QR ---
         composable("qr") {
             QrScreen(
                 viewModel      = scanViewModel,
@@ -251,7 +251,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Scan Result ────────────────────────────────────────────────────────
+        // --- Scan Result ---
         composable("result") {
             ScanResultScreen(
                 viewModel               = scanViewModel,
@@ -271,7 +271,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Sandbox ────────────────────────────────────────────────────────────
+        // --- Sandbox ---
         composable(
             route     = "sandbox/{url}/{scanId}",
             arguments = listOf(
@@ -286,7 +286,7 @@ fun AppNavigation(
                 onBack = { navController.popBackStack() })
         }
 
-        // ── Security Analysis ──────────────────────────────────────────────────
+        // --- Security Analysis ---
         composable(
             route = "security/{url}/{scanId}?verdict={verdict}&categories={categories}",
             arguments = listOf(
@@ -312,7 +312,7 @@ fun AppNavigation(
             )
         }
 
-        // ── My Plan ────────────────────────────────────────────────────────────
+        // --- My Plan ---
         composable("my_plan") {
             val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
             val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
@@ -329,7 +329,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Plans ──────────────────────────────────────────────────────────────
+        // --- Plans ---
         composable("plans") {
             LaunchedEffect(Unit) { planViewModel.loadMyPlan(loggedInUserId) }
             PlansScreen(
@@ -340,7 +340,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Upgrade Plan ───────────────────────────────────────────────────────
+        // --- Upgrade Plan ---
         composable(
             route     = "upgrade_plan/{plan}",
             arguments = listOf(navArgument("plan") { type = NavType.StringType })
@@ -358,7 +358,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Scan History ───────────────────────────────────────────────────────
+        // --- Scan History ---
         composable("scan_history") {
             ScanHistoryScreen(
                 repository = repository,
@@ -368,7 +368,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Saved Links ────────────────────────────────────────────────────────
+        // --- Saved Links ---
         composable("saved_links") {
             SavedLinksScreen(
                 repository    = repository,
@@ -378,7 +378,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Settings ───────────────────────────────────────────────────────────
+        // --- Settings ---
         composable("settings") {
             val isRegularUser = loggedInRole == "user"
             val isPM          = loggedInRole == "platform_manager"
@@ -418,7 +418,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Help FAQ ───────────────────────────────────────────────────────────
+        // --- Help FAQ ---
         composable("help_faq") {
             HelpFaqScreen(
                 repository = repository,
@@ -426,12 +426,12 @@ fun AppNavigation(
             )
         }
 
-        // ── Auto Logout ────────────────────────────────────────────────────────
+        // --- Auto Logout ---
         composable("auto_logout") {
             AutoLogoutScreen(userId = loggedInUserId, onBack = { navController.popBackStack() })
         }
 
-        // ── Warning Strictness ─────────────────────────────────────────────────
+        // --- Warning Strictness ---
         composable("warning_strictness") {
             WarningStrictnessScreen(userId = loggedInUserId, onBack = { navController.popBackStack() })
         }
@@ -445,7 +445,7 @@ fun AppNavigation(
             )
         }
 
-        // ── User Support / Report ──────────────────────────────────────────────
+        // --- User Support / Report ---
         composable("user_support") {
             UserSupportScreen(
                 repository = repository,
@@ -455,7 +455,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Browse & Scan (Standard + Premium) ────────────────────────────────
+        // --- Browse & Scan (Standard + Premium) ---
         composable("browse_scan") {
             BrowseScanScreen(
                 repository = repository,
@@ -465,7 +465,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Edit Profile ───────────────────────────────────────────────────────
+        // --- Edit Profile ---
         composable("edit_profile") {
             EditProfileScreen(
                 repository   = repository,
@@ -481,7 +481,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Admin Dashboard ────────────────────────────────────────────────────
+        // --- Admin Dashboard ---
         composable("admin_dashboard") {
             AdminDashboardScreen(
                 adminName  = loggedInName,
@@ -507,7 +507,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Admin User Management ──────────────────────────────────────────────
+        // --- Admin User Management ---
         composable("admin_users") {
             UserManagementScreen(
                 token     = loggedInToken,
@@ -519,7 +519,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Admin User Detail ──────────────────────────────────────────────────
+        // --- Admin User Detail ---
         composable(
             route     = "admin_user_detail/{userId}",
             arguments = listOf(navArgument("userId") { type = NavType.StringType })
@@ -533,7 +533,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Admin User Profiles ────────────────────────────────────────────────
+        // --- Admin User Profiles ---
         composable("admin_profiles") {
             UserProfilesScreen(
                 token          = loggedInToken,
@@ -545,7 +545,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Admin Profile Detail ───────────────────────────────────────────────
+        // --- Admin Profile Detail ---
         composable(
             route     = "admin_profile_detail/{profileId}",
             arguments = listOf(navArgument("profileId") { type = NavType.StringType })
@@ -595,7 +595,7 @@ fun AppNavigation(
             )
         }
 
-        // ── Platform Manager Dashboard ─────────────────────────────────────────
+        // --- Platform Manager Dashboard ---
         composable("pm_dashboard") {
             com.example.weblinkscanner.ui.screens.platform.PMDashboardScreen(
                 pmName    = loggedInName,

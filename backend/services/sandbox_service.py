@@ -1,13 +1,9 @@
 # sandbox_service.py
-#
-# Uses urlscan.io's remote browser sandbox to analyse URLs.
-# Flow:
-#   1. POST to /api/v1/scan/ - submits the URL, get back a UUID
-#   2. Poll GET /api/v1/result/{uuid}/ - wait until the scan finishes (HTTP 200)
-#   3. Extract every useful field from the JSON response
-#   4. Screenshot URL is: https://urlscan.io/screenshots/{uuid}.png
-#
-# API key is read from config.py (loaded from .env).
+
+# This service uses urlscan.io as a remote browser sandbox to pull deep info on a URL.
+# 1. We submit the URL to get a task UUID.
+# 2. We poll their result API until the scan actually finishes (usually takes 20-40s).
+# 3. We map their massive JSON response into our own structured format.
 
 import asyncio
 import httpx
@@ -18,14 +14,12 @@ SUBMIT_URL  = "https://urlscan.io/api/v1/scan/"
 RESULT_URL  = "https://urlscan.io/api/v1/result/{uuid}/"
 SCREENSHOT  = "https://urlscan.io/screenshots/{uuid}.png"
 
-# urlscan.io typically finishes in 15-45 seconds.
-# Strategy: wait 5s before the first poll (scan needs time to start),
-# then poll every 4s for up to 15 attempts (60s total ceiling).
 INITIAL_WAIT  = 5   # seconds to wait before the very first poll
 POLL_INTERVAL = 4   # seconds between subsequent polls
 MAX_POLLS     = 15  # 15 × 4s = 60s total polling window
 
 async def run_sandbox(url: str) -> dict:
+    # Basic cleanup to ensure httpx doesn't complain about missing schemes
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
 
@@ -33,6 +27,7 @@ async def run_sandbox(url: str) -> dict:
     headers = {"API-Key": api_key, "Content-Type": "application/json"}
 
     # --- Step 1: Submit ---
+    # We send the job to urlscan.io. If it doesn't return a UUID, we can't proceed.
     async with httpx.AsyncClient(timeout=15) as client:
         try:
             submit_resp = await client.post(
@@ -55,6 +50,7 @@ async def run_sandbox(url: str) -> dict:
             return empty(url)
 
     # --- Step 2: Poll until result is ready ---
+    # Since urlscan is async, we have to keep checking back until the report is ready.
     result_url = RESULT_URL.format(uuid=uuid)
     result = None
 
@@ -87,6 +83,7 @@ async def run_sandbox(url: str) -> dict:
 
 
 def extract(result: dict, uuid: str, original_url: str) -> dict:
+    # Helper to flatten the deeply nested urlscan JSON into something we can actually use.
     page     = result.get("page",     {})
     lists    = result.get("lists",    {})
     data     = result.get("data",     {})
@@ -188,34 +185,15 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
         except Exception:
             pass
 
-    # -------------------------------------------------------------------------
-    # Premium enrichment: Ads, Trackers, Suspicious Scripts
-    #
-    # All detection uses only what urlscan returns from data.requests.
-    # Confirmed field paths from live API response:
-    #   req["request"]["type"]           → resource type (Script/XHR/Image/Fetch/Ping)
-    #   req["request"]["request"]["url"] → actual request URL
-    #   req["response"]["dataLength"]    → response body size in bytes
-    #
-    # ADS: URL path contains "/ad", "/ads/", "adfuel", "advert", "sponsor"
-    #      OR script filename contains "ad" as a whole word segment
-    #      These are structural URL conventions used by all ad systems.
-    #
-    # TRACKERS: Behavioural signals from request type + URL path
-    #   - Ping requests (browser-native tracking API, always third-party tracking)
-    #   - XHR/Fetch to paths like /collect, /beacon, /pixel, /track, /analytics
-    #   - Images ≤ 1KB from third-party hosts (tracking pixels)
-    #
-    # SCRIPTS: Structural signals
-    #   - Third-party Script over HTTP on HTTPS page
-    #   - Script filename is a hex hash (obfuscation pattern)
-    # -------------------------------------------------------------------------
+    # Heuristic Detection: Ads, Trackers, and Red-Flag Scripts
+    # We're scanning the raw request list from urlscan to find behavior that
+    # suggests the site is overloaded with tracking or using obfuscated scripts.
 
     import re as _re
 
     raw_requests = data.get("requests", [])
 
-    # URL path segments used exclusively by ad delivery systems
+    # Standard URL patterns used by most ad networks
     AD_PATH_SIGNALS = [
         "/ads/", "/ad/", "/advert", "/advertisement",
         "adfuel", "adserver", "admanager", "adtech",
@@ -223,8 +201,7 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
         "sponsor", "promoted", "pagead",
     ]
 
-    # URL path segments used by tracking/analytics endpoints
-    # These are HTTP-standard naming conventions, not vendor names
+    # Common naming conventions for telemetry and tracking endpoints
     TRACKER_PATH_SIGNALS = [
         "/collect", "/beacon", "/pixel", "/track", "/ping",
         "/analytics", "/hit", "/event", "/log", "/telemetry",
@@ -258,6 +235,7 @@ def extract(result: dict, uuid: str, original_url: str) -> dict:
             req_scheme = parsed.scheme.lower()
             req_fname  = req_path.split("/")[-1]          # filename portion
 
+            # We care most about things coming from third-party domains
             is_third_party = apex_domain and apex_domain not in req_host
 
             # --- ADS ---
@@ -381,9 +359,8 @@ def safe_int(val) -> int | None:
     except (TypeError, ValueError):
         return None
 
-
+# Fallback for when the sandbox API completely fails
 def empty(url: str) -> dict:
-    """Returned when urlscan.io cannot complete the scan."""
     return {
         "status_code":       None,
         "page_title":        None,

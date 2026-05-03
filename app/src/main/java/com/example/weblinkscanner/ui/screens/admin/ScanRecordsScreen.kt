@@ -198,7 +198,6 @@ private fun ScanRecordRow(record: AdminScanRecord) {
                 }
             }
             // Threat categories
-            // --- Updated Threat Categories Section ---
             if (!record.threatCategories.isNullOrEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = Color(0xFFF1F5F9))
 

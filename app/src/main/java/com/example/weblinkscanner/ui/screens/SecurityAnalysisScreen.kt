@@ -263,16 +263,76 @@ fun SecurityAnalysisScreen(
                                 }
 
                                 HorizontalDivider(color = DividerCol, modifier = Modifier.padding(vertical = 8.dp))
-                                CheckRow(
-                                    label  = "Redirect Check",
-                                    detail = when {
-                                        !hasRedirect          -> "No redirects detected"
-                                        redirectedToNewDomain -> "Redirected to a different domain"
-                                        else                  -> "${r.redirectChain.size - 1} redirect(s) - same domain"
-                                    },
-                                    pass = !redirectedToNewDomain,
-                                    warn = hasRedirect && !redirectedToNewDomain
-                                )
+                                // Redirect Check with inline URL list for Standard & Premium
+                                val redirectSummary = when {
+                                    !hasRedirect          -> "No redirects detected"
+                                    redirectedToNewDomain -> "Redirected to a different domain"
+                                    else                  -> "${r.redirectChain.size - 1} redirect(s) - same domain"
+                                }
+                                if ((isStandard || isPremium) && hasRedirect && r.redirectChain.isNotEmpty()) {
+                                    // Custom row: CheckRow icon + label, then URLs below
+                                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                                        val redirectPass = !redirectedToNewDomain
+                                        val redirectWarn = hasRedirect && !redirectedToNewDomain
+                                        val iconColor = when {
+                                            redirectPass && !redirectWarn -> GreenPass
+                                            redirectWarn                  -> AmberWarn
+                                            else                          -> RedFail
+                                        }
+                                        val iconBg = when {
+                                            redirectPass && !redirectWarn -> GreenBg
+                                            redirectWarn                  -> AmberBg
+                                            else                          -> RedBg
+                                        }
+                                        val icon = when {
+                                            redirectPass && !redirectWarn -> Icons.Default.CheckCircle
+                                            redirectWarn                  -> Icons.Default.Warning
+                                            else                          -> Icons.Default.Cancel
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(iconBg),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(icon, null, tint = iconColor, modifier = Modifier.size(16.dp))
+                                        }
+                                        Spacer(Modifier.width(12.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Redirect Check", fontSize = 13.sp,
+                                                fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                            Text(redirectSummary, fontSize = 12.sp,
+                                                color = TextMuted, lineHeight = 18.sp)
+                                            Spacer(Modifier.height(4.dp))
+                                            val displayed = r.redirectChain.take(2)
+                                            displayed.forEachIndexed { i, step ->
+                                                Text(
+                                                    "${i + 1}. $step",
+                                                    fontSize = 11.sp,
+                                                    color    = TextMuted,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                            if (r.redirectChain.size > 2) {
+                                                Text(
+                                                    "+${r.redirectChain.size - 2} more",
+                                                    fontSize = 11.sp,
+                                                    color    = Blue600,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    CheckRow(
+                                        label  = "Redirect Check",
+                                        detail = redirectSummary,
+                                        pass   = !redirectedToNewDomain,
+                                        warn   = hasRedirect && !redirectedToNewDomain
+                                    )
+                                }
 
                                 HorizontalDivider(color = DividerCol, modifier = Modifier.padding(vertical = 8.dp))
                                 CheckRow(
@@ -299,23 +359,6 @@ fun SecurityAnalysisScreen(
                                     pass = loadTime in 1..4999,
                                     warn = loadTime >= 5000 || loadTime == 0
                                 )
-
-                                if (isStandard && r.redirectChain.size > 1) {
-                                    HorizontalDivider(color = DividerCol, modifier = Modifier.padding(vertical = 8.dp))
-                                    Column {
-                                        Text("Redirect Path:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                                        Spacer(Modifier.height(4.dp))
-                                        r.redirectChain.forEachIndexed { i, step ->
-                                            Text(
-                                                "${i + 1}. $step",
-                                                fontSize = 11.sp,
-                                                color    = TextMuted,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-                                }
 
                                 if (isPremium) {
                                     r.domainCount?.let {
@@ -350,7 +393,7 @@ fun SecurityAnalysisScreen(
                     }
                 }
 
-                // Premium ad/tracker section — outside when block so it always renders
+                // Premium ad/tracker section
                 if (isPremium && report != null) {
                     val r = report!!
                     Spacer(Modifier.height(12.dp))
