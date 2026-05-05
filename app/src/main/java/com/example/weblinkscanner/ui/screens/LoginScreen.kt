@@ -195,7 +195,7 @@ fun LoginScreen(
             .background(Brush.verticalGradient(colors = listOf(bgTop, bgBottom)))
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp).navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -338,7 +338,7 @@ fun LoginScreen(
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(bottom = 32.dp)) {
+                modifier = Modifier.padding(bottom = 0.dp)) {
                 HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp,
                     modifier = Modifier.padding(bottom = 16.dp))
                 Text("Don't have an account?", fontSize = 14.sp, color = textMuted)

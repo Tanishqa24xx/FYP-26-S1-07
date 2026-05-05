@@ -68,7 +68,8 @@ fun MenuScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 28.dp),
+                .padding(horizontal = 28.dp)
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -273,8 +274,8 @@ fun MenuScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 36.dp)
             )
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

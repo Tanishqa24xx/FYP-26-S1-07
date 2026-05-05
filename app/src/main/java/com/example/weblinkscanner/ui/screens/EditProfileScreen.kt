@@ -158,7 +158,7 @@ fun EditProfileScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(PageBgTop, PageBgBot)))) {
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp).navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(56.dp))

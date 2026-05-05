@@ -129,6 +129,32 @@ fun PMAnalyticsScreen(
                             }
                         }
                     }
+                    if (f.data.featureUsage.isNotEmpty()) {
+                        Text("Scan Method Breakdown", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = PMMuted)
+                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = PMCardBg), elevation = CardDefaults.cardElevation(2.dp)) {
+                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                val methodColors = mapOf("manual" to PMGreen, "camera" to PMTeal, "qr" to PMPurple)
+                                val methodLabels = mapOf("manual" to "Manual URL", "camera" to "Camera OCR", "qr" to "QR Code")
+                                val total = f.data.featureUsage.values.sum().coerceAtLeast(1)
+                                f.data.featureUsage.forEach { (method, count) ->
+                                    val color = methodColors[method] ?: PMMuted
+                                    val label = methodLabels[method] ?: method.replaceFirstChar { it.uppercase() }
+                                    val pct = count.toFloat() / total
+                                    Column {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = PMTxt)
+                                            Text("$count (${(pct * 100).toInt()}%)", fontSize = 13.sp, color = color, fontWeight = FontWeight.Bold)
+                                        }
+                                        Spacer(Modifier.height(4.dp))
+                                        Box(Modifier.fillMaxWidth().height(8.dp).background(Color(0xFFE2E8F0), RoundedCornerShape(4.dp))) {
+                                            Box(Modifier.fillMaxWidth(pct).height(8.dp).background(color, RoundedCornerShape(4.dp)))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 else -> {}
             }

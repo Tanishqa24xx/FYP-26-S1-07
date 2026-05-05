@@ -125,7 +125,7 @@ fun BrowseScanScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(PageBgTop, PageBgBot)))) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
 
             // Top bar
             Surface(

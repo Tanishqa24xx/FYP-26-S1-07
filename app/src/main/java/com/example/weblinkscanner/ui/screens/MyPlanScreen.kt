@@ -75,7 +75,8 @@ fun MyPlanScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 24.dp)
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(52.dp))
@@ -177,7 +178,7 @@ fun MyPlanScreen(
                             }
                         }
                         Spacer(Modifier.height(4.dp))
-                        Text("No daily limit — scan as many links as you need.", fontSize = 11.sp, color = TextMuted)
+                        Text("No daily limit - scan as many links as you need.", fontSize = 11.sp, color = TextMuted)
                     } else {
                         // Free (5/day) and Standard (30/day): show count + progress bar
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

@@ -184,20 +184,26 @@ def analytics_overview():
 @router.get("/analytics/features")
 def analytics_features():
     try:
-        scans_data = (supabase.table("scan_history").select("verdict").execute()).data or []
+        scans_data = (supabase.table("scan_history").select("verdict, scan_source").execute()).data or []
+
         verdict_counts = {"SAFE": 0, "SUSPICIOUS": 0, "DANGEROUS": 0}
+        source_counts: dict = {}
         for s in scans_data:
             v = (s.get("verdict") or "SAFE").upper()
             verdict_counts[v] = verdict_counts.get(v, 0) + 1
+            src = (s.get("scan_source") or "manual").lower()
+            source_counts[src] = source_counts.get(src, 0) + 1
+
         users_data = (supabase.table("users").select("plan").execute()).data or []
         plan_counts: dict = {}
         for u in users_data:
             p = (u.get("plan") or "free").lower()
             plan_counts[p] = plan_counts.get(p, 0) + 1
+
         return {
             "verdict_breakdown": verdict_counts,
             "plan_distribution": plan_counts,
-            "feature_usage":     {"scan_url": len(scans_data)}
+            "feature_usage":     source_counts
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
