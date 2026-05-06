@@ -391,7 +391,7 @@ fun AppNavigation(
                 onNavigateToWarningStrictness     = { navController.navigate("warning_strictness") },
                 onNavigateToSupport               = { navController.navigate("user_support") },
                 onNavigateToScanLimitNotification = { navController.navigate("scan_limit_notification") },
-                showWarningStrictness             = isRegularUser,
+                showWarningStrictness             = isRegularUser && loggedInPlan.lowercase() in listOf("standard", "premium"),
                 showReportSupport                 = isRegularUser,
                 showHelpFaq                       = !isPM,   // PM manages FAQ, doesn't need to view it here
                 showScanLimitNotification         = isRegularUser && hasLimitPlan,
