@@ -152,8 +152,15 @@ fun PMReportsScreen(
                                 appendLine("Date,Scans")
                                 report.scansByDate.forEach { (d, c) -> appendLine("$d,$c") }
                             }
+                            val file = java.io.File(context.cacheDir, "pm_report.csv")
+                            file.writeText(csv)
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                file
+                            )
                             context.startActivity(Intent.createChooser(
-                                Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, csv); putExtra(Intent.EXTRA_SUBJECT, "LinkScanner Report") },
+                                Intent(Intent.ACTION_SEND).apply { type = "text/csv"; putExtra(Intent.EXTRA_TEXT, csv); putExtra(Intent.EXTRA_SUBJECT, "LinkScanner Report") },
                                 "Export Report"
                             ))
                         },
