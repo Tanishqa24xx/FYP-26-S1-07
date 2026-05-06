@@ -145,24 +145,34 @@ fun PMReportsScreen(
                     OutlinedButton(
                         onClick = {
                             val csv = buildString {
-                                appendLine("Weblink Scanner Report: ${report.period["start"]} to ${report.period["end"]}")
+                                appendLine("WeblinkScanner Report: ${report.period["start"]} to ${report.period["end"]}")
                                 appendLine("Total Scans,${report.totalScans}")
                                 appendLine("New Users,${report.newUsers}")
                                 appendLine()
                                 appendLine("Date,Scans")
                                 report.scansByDate.forEach { (d, c) -> appendLine("$d,$c") }
                             }
-                            val file = java.io.File(context.cacheDir, "pm_report.csv")
-                            file.writeText(csv)
-                            val uri = androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.provider",
-                                file
-                            )
-                            context.startActivity(Intent.createChooser(
-                                Intent(Intent.ACTION_SEND).apply { type = "text/csv"; putExtra(Intent.EXTRA_TEXT, csv); putExtra(Intent.EXTRA_SUBJECT, "LinkScanner Report") },
-                                "Export Report"
-                            ))
+                            try {
+                                val file = java.io.File(context.cacheDir, "pm_report.csv")
+                                file.writeText(csv)
+                                val uri = androidx.core.content.FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.provider",
+                                    file
+                                )
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/csv"
+                                            putExtra(Intent.EXTRA_STREAM, uri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        },
+                                        "Export Report"
+                                    )
+                                )
+                            } catch (e: Exception) {
+                                android.util.Log.e("PMReport", "Export failed: ${e.message}")
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape    = RoundedCornerShape(10.dp),
