@@ -168,9 +168,16 @@ class UpdateProfileRequest(BaseModel):
 
 @router.get("/reset-password", response_class=HTMLResponse)
 async def reset_password_page(request: Request):
-    html_path = os.path.join(os.path.dirname(__file__), "reset_password.html")
-    with open(html_path, "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
+    html_path = os.path.join(os.path.dirname(__file__), "..", "reset_password.html")
+
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        # Fallback for local debugging if the path logic varies
+        root_path = os.path.join(os.getcwd(), "reset_password.html")
+        with open(root_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
 
 
 @router.post("/reset-password")
