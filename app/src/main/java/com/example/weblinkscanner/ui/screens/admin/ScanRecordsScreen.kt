@@ -67,7 +67,7 @@ fun ScanRecordsScreen(
                             val csv = buildString {
                                 appendLine("URL,Verdict,Risk Score,User Email,Scanned At")
                                 records.forEach { r ->
-                                    appendLine("\"${r.url ?: ""}\",${r.verdict ?: ""},${r.riskScore ?: ""},${r.userEmail ?: ""},${r.scannedAt ?: ""}")
+                                    appendLine("\"${r.url ?: ""}\",${r.verdict ?: ""},${r.riskScore ?: ""},${r.scannedAt ?: ""}")
                                 }
                             }
                             val intent = Intent(Intent.ACTION_SEND).apply {
@@ -192,7 +192,7 @@ private fun ScanRecordRow(record: AdminScanRecord) {
                 maxLines = 2, overflow = TextOverflow.Ellipsis
             )
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(record.userEmail ?: "Unknown user", fontSize = 11.sp, color = SRMuted)
+                Text("Scan #${record.id.take(8)}", fontSize = 11.sp, color = SRMuted)
                 record.riskScore?.let { score ->
                     Text("Risk: ${String.format("%.0f", score * 100)}%", fontSize = 11.sp, color = verdictColor)
                 }

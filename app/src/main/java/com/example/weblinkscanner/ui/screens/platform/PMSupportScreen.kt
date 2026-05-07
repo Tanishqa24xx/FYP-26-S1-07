@@ -105,7 +105,6 @@ private fun SupportRequestCard(req: PMSupportRequest, onClick: () -> Unit) {
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                 }
             }
-            Text(req.userEmail ?: "Unknown user", fontSize = 12.sp, color = PMMuted)
             Text(req.message.take(100) + if (req.message.length > 100) "…" else "", fontSize = 12.sp, color = PMMuted)
             Text(req.createdAt?.take(10) ?: "", fontSize = 11.sp, color = PMMuted)
         }

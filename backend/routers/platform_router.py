@@ -262,8 +262,13 @@ def list_support(status: Optional[str] = Query(None)):
         query = supabase.table("support_requests").select("*")
         if status and status != "all":
             query = query.eq("status", status)
-        result = query.order("created_at", desc=True).execute()
-        return {"requests": result.data or []}
+        requests = query.order("created_at", desc=True).execute().data or []
+
+        for req in requests:
+            if req.get("user_id"):
+                user = supabase.table("users").select("name").eq("id", req["user_id"]).execute().data
+                req["user_name"] = user[0]["name"] if user else "Unknown"
+        return {"requests": requests}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -299,6 +304,9 @@ def get_my_support(user_id: str):
                 .order("created_at") \
                 .execute()
             req["replies"] = replies.data or []
+            if req.get("user_id"):
+                user = supabase.table("users").select("name").eq("id", req["user_id"]).execute().data
+                req["user_name"] = user[0]["name"] if user else "Unknown"
         return {"requests": requests}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

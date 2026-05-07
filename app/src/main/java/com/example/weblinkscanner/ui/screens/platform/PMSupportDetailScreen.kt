@@ -86,7 +86,6 @@ fun PMSupportDetailScreen(
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                                     Column(Modifier.weight(1f)) {
                                         Text(req.subject, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PMTxt)
-                                        Text(req.userEmail ?: "Unknown", fontSize = 13.sp, color = PMMuted)
                                         Text(req.createdAt?.take(10) ?: "", fontSize = 11.sp, color = PMMuted)
                                     }
                                     Box {

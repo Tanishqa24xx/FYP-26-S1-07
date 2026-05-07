@@ -90,7 +90,8 @@ fun ScanHistoryScreen(
         val filtered = items.filter { item ->
             val matchesSearch = searchQuery.isBlank() ||
                     (item.url ?: "").contains(searchQuery, ignoreCase = true) ||
-                    item.riskLevel.contains(searchQuery, ignoreCase = true)
+                    item.riskLevel.contains(searchQuery, ignoreCase = true) ||
+                    item.scannedAt.take(10).contains(searchQuery)
             val matchesFilter = filterVerdict == "ALL" ||
                     item.riskLevel.uppercase() == filterVerdict
             matchesSearch && matchesFilter
@@ -330,7 +331,7 @@ fun ScanHistoryScreen(
                         OutlinedTextField(
                             value         = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder   = { Text("Search by URL or verdict", color = TextMuted) },
+                            placeholder   = { Text("Search by URL, Verdict or Date", color = TextMuted) },
                             leadingIcon   = { Icon(Icons.Default.Search, null, tint = Blue600) },
                             trailingIcon  = if (searchQuery.isNotBlank()) ({
                                 IconButton(onClick = { searchQuery = "" }) {
