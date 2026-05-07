@@ -65,17 +65,28 @@ fun ScanRecordsScreen(
                         val records = (scanState.value as AdminViewModel.UiState.Success).data.records
                         IconButton(onClick = {
                             val csv = buildString {
-                                appendLine("URL,Verdict,Risk Score,User Email,Scanned At")
+                                appendLine("URL,Verdict,Risk Score,Scanned At")
                                 records.forEach { r ->
                                     appendLine("\"${r.url ?: ""}\",${r.verdict ?: ""},${r.riskScore ?: ""},${r.scannedAt ?: ""}")
                                 }
                             }
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, csv)
-                                putExtra(Intent.EXTRA_SUBJECT, "Scan Records Export")
-                            }
-                            context.startActivity(Intent.createChooser(intent, "Export CSV"))
+                            val file = java.io.File(context.cacheDir, "scan_records.csv")
+                            file.writeText(csv)
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                file
+                            )
+                            context.startActivity(
+                                Intent.createChooser(
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/csv"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    },
+                                    "Export CSV"
+                                )
+                            )
                         }) {
                             Icon(Icons.Default.Share, null, tint = SRBlue)
                         }

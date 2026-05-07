@@ -342,13 +342,7 @@ def list_scan_records(verdict: Optional[str] = Query(None)):
             query = query.eq("verdict", verdict.upper())
         result = query.order("created_at", desc=True).limit(200).execute()
         records = result.data or []
-        # batch fetch emails to avoid N+1
-        user_ids = list({r["user_id"] for r in records if r.get("user_id")})
-        if user_ids:
-            ur = supabase.table("users").select("id, email").in_("id", user_ids).execute()
-            user_map = {u["id"]: u["email"] for u in (ur.data or [])}
-            for r in records:
-                r["user_email"] = user_map.get(r.get("user_id"))
+
         return {"records": records, "total": len(records)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -367,11 +361,7 @@ def list_flagged_links(verdict: Optional[str] = Query(None)):
         result = query.order("created_at", desc=True).limit(200).execute()
         records = result.data or []
         user_ids = list({r["user_id"] for r in records if r.get("user_id")})
-        if user_ids:
-            ur = supabase.table("users").select("id, email").in_("id", user_ids).execute()
-            user_map = {u["id"]: u["email"] for u in (ur.data or [])}
-            for r in records:
-                r["user_email"] = user_map.get(r.get("user_id"))
+
         return {"records": records, "total": len(records)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

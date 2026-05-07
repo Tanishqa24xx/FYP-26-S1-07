@@ -70,12 +70,23 @@ fun AuditLogScreen(
                                     appendLine("${e.action},${e.targetType ?: ""},${e.targetEmail ?: ""},\"${e.details ?: ""}\",${e.createdAt}")
                                 }
                             }
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, csv)
-                                putExtra(Intent.EXTRA_SUBJECT, "Audit Log Export")
-                            }
-                            context.startActivity(Intent.createChooser(intent, "Export CSV"))
+                            val file = java.io.File(context.cacheDir, "audit_log.csv")
+                            file.writeText(csv)
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                file
+                            )
+                            context.startActivity(
+                                Intent.createChooser(
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/csv"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    },
+                                    "Export CSV"
+                                )
+                            )
                         }) { Icon(Icons.Default.Share, null, tint = ALBlue) }
                     }
                     IconButton(onClick = { viewModel.loadAuditLog(token) }) {

@@ -86,14 +86,13 @@ data class AssignProfileRequest(
 // --- Admin Scan Record ---
 
 data class AdminScanRecord(
-    val id: String,
     val url: String?,
     val verdict: String?,
-    @SerializedName("risk_score")        val riskScore: Double?,
+    @SerializedName("risk_score") val riskScore: Double?,
     @SerializedName("threat_categories") val threatCategories: List<String>?,
-    @SerializedName("scanned_at")        val scannedAt: String?,
-    @SerializedName("user_id")           val userId: String?,
-    @SerializedName("user_email")        val userEmail: String?
+    @SerializedName("scanned_at") val scannedAt: String?,
+    @SerializedName("user_id") val userId: String?,
+    @SerializedName("scan_id") val id: String=""
 )
 
 data class AdminScanRecordsResponse(
