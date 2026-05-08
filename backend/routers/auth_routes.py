@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from database import supabase
 from supabase import create_client
 from config import settings
+import threading
 
 # Email settings - loaded from .env so credentials are not in the code
 DEVELOPER_EMAILS = [os.environ.get("DEVELOPER_EMAIL", "")]
@@ -111,14 +112,13 @@ def send_approval_email(user_id: str, name: str, email: str, role: str):
         msg["To"] = ", ".join(recipients)
         msg.attach(MIMEText(plain_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body,  "html",  "utf-8"))
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASS)
             server.sendmail(SMTP_USER, recipients, msg.as_string())
         print(f"[EMAIL] Approval email sent to {DEVELOPER_EMAILS} for {name} ({email})")
     except Exception as e:
         print(f"[EMAIL ERROR] Failed to send approval email: {e}")
-        raise
 
 
 router = APIRouter()
@@ -207,25 +207,19 @@ def signup(request: SignupRequest):
         needs_approval = request.role in ("admin", "platform_manager")
         status = "pending" if needs_approval else "approved"
         supabase.table("users").insert({
-            "id":     user_id,
-            "name":   request.name,
-            "email":  request.email,
-            "role":   request.role,
-            "status": status,
+            "id":                 user_id,
+            "name":               request.name,
+            "email":              request.email,
+            "role":               request.role,
+            "status":             status,
+            "account_status":     "active",
+            "failed_login_count": 0,
         }).execute()
         if needs_approval:
-            try:
-                send_approval_email(user_id, request.name, request.email, request.role)
-            except Exception as email_err:
-                print(f"[EMAIL ERROR] {email_err}")
-                return {
-                    "message":       "pending_approval",
-                    "name":          request.name,
-                    "email":         request.email,
-                    "role":          request.role,
-                    "status":        status,
-                    "email_warning": f"Account created but approval email failed: {str(email_err)}"
-                }
+            threading.Thread(
+                target=lambda: send_approval_email(user_id, request.name, request.email, request.role),
+                daemon=True
+            ).start()
             return {
                 "message": "pending_approval",
                 "name":    request.name,

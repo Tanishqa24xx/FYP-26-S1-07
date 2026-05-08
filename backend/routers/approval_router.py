@@ -159,13 +159,16 @@ def handle_approval(user_id: str, action: str = ""):
         )
         return _wrap("Admin Approval Required", inner)
 
-    # apply approve or reject
+    # approve or reject
     new_status = "approved" if action == "approve" else "rejected"
     try:
-        supabase.table("users").update({"status": new_status}).eq("id", user_id).execute()
+        update_payload = {"status": new_status}
+        if new_status == "rejected":
+            update_payload["account_status"] = "suspended"
+        supabase.table("users").update(update_payload).eq("id", user_id).execute()
     except Exception as e:
         return _result("&#x26A0;", "Update Failed", "Error", "#dc2626",
-                       f"Could not update account status: {e}")
+                   f"Could not update account status: {e}")
 
     if action == "approve":
         return _result("&#x2705;", "Account Approved", "Approved", "#16a34a",

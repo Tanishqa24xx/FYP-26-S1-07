@@ -201,15 +201,12 @@ private fun UserRow(user: AdminUser, onClick: () -> Unit) {
         .trim().split(" ").filter { it.isNotBlank() }
         .take(2).joinToString("") { it.first().uppercaseChar().toString() }
 
-    val (statusColor, statusBg) = when (user.accountStatus?.lowercase()) {
-        "suspended" -> Color(0xFFDC2626) to Color(0xFFFEE2E2)
-        "locked"    -> Color(0xFFD97706) to Color(0xFFFEF3C7)
-        else        -> Color(0xFF16A34A) to Color(0xFFDCFCE7)
-    }
-    val statusLabel = when (user.accountStatus?.lowercase()) {
-        "suspended" -> "Suspended"
-        "locked"    -> "Locked"
-        else        -> "Active"
+    val (statusColor, statusBg, statusLabel) = when {
+        user.accountStatus?.lowercase() == "suspended" -> Triple(Color(0xFFDC2626), Color(0xFFFEE2E2), "Suspended")
+        user.accountStatus?.lowercase() == "locked"    -> Triple(Color(0xFFD97706), Color(0xFFFEF3C7), "Locked")
+        user.status?.lowercase() == "rejected"         -> Triple(Color(0xFFDC2626), Color(0xFFFEE2E2), "Rejected")
+        user.status?.lowercase() == "pending"          -> Triple(Color(0xFFD97706), Color(0xFFFEF3C7), "Pending")
+        else                                           -> Triple(Color(0xFF16A34A), Color(0xFFDCFCE7), "Active")
     }
     val roleColor = when (user.role?.lowercase()) {
         "admin"            -> Color(0xFF7C3AED)

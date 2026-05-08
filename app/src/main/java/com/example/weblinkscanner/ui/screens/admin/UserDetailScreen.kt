@@ -218,10 +218,13 @@ fun UserDetailScreen(
             is AdminViewModel.UiState.Success -> {
                 val user = state.data
                 val accountStatus = user.accountStatus ?: "active"
-                val (statusColor, statusBg) = when (accountStatus.lowercase()) {
-                    "suspended" -> DangerRed to Color(0xFFFEE2E2)
-                    "locked"    -> WarningAmb to Color(0xFFFEF3C7)
-                    else        -> SuccessGrn to Color(0xFFDCFCE7)
+                val userStatus = user.status ?: "approved"
+                val (statusColor, statusBg, statusLabel) = when {
+                    accountStatus.lowercase() == "suspended" -> Triple(DangerRed,  Color(0xFFFEE2E2), "Suspended")
+                    accountStatus.lowercase() == "locked"    -> Triple(WarningAmb, Color(0xFFFEF3C7), "Locked")
+                    userStatus.lowercase() == "rejected"     -> Triple(DangerRed,  Color(0xFFFEE2E2), "Rejected")
+                    userStatus.lowercase() == "pending"      -> Triple(WarningAmb, Color(0xFFFEF3C7), "Pending")
+                    else                                     -> Triple(SuccessGrn,  Color(0xFFDCFCE7), "Active")
                 }
 
                 Column(
@@ -257,7 +260,7 @@ fun UserDetailScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             Surface(shape = RoundedCornerShape(8.dp), color = statusBg) {
                                 Text(
-                                    accountStatus.replaceFirstChar { it.uppercase() },
+                                    statusLabel,
                                     fontSize = 12.sp, fontWeight = FontWeight.Bold, color = statusColor,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                 )

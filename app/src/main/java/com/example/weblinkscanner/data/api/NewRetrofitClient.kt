@@ -13,9 +13,9 @@ object NewRetrofitClient {
     }
     private val client = OkHttpClient.Builder()
         .addInterceptor(logging)
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(90, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .writeTimeout(90, TimeUnit.SECONDS)
         .build()
 
     val api: NewApiService by lazy {
